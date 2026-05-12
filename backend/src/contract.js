@@ -17,9 +17,21 @@ function getContract() {
     return null;
   }
 
+  const cacheKey = `${config.rpcUrl}|${config.chainId}|${contractAddress}|${config.adminPrivateKey}`;
+  if (runtimeCache.cacheKey === cacheKey && runtimeCache.contract) {
+    return runtimeCache.contract;
+  }
+
   const provider = new ethers.JsonRpcProvider(config.rpcUrl, config.chainId);
   const wallet = new ethers.Wallet(config.adminPrivateKey, provider);
-  return new ethers.Contract(contractAddress, CONTRACT_ABI, wallet);
+  const contract = new ethers.Contract(contractAddress, CONTRACT_ABI, wallet);
+
+  runtimeCache = {
+    cacheKey,
+    contract,
+  };
+
+  return contract;
 }
 
 function getResolvedContractAddress() {
@@ -36,5 +48,10 @@ function getResolvedContractAddress() {
 
   return "";
 }
+
+let runtimeCache = {
+  cacheKey: "",
+  contract: null,
+};
 
 export { getContract };

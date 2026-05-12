@@ -15,6 +15,7 @@ const config = {
   chainId: Number(process.env.CHAIN_ID || 31337),
   supabaseUrl: process.env.SUPABASE_URL || "",
   supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY || "",
+  txTimeoutMs: Number(process.env.TX_TIMEOUT_MS || 120000),
 };
 
 export default config;
