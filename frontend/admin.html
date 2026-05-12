@@ -13,30 +13,38 @@
       <h1 class="h3 mb-0">Admin Dashboard</h1>
       <a href="index.html" class="btn btn-outline-secondary btn-sm">Back</a>
     </div>
+    <p class="task-meta mb-4">Run approval and release operations in sequence. Each action publishes an on-chain transaction hash for auditing.</p>
 
     <div id="alertBox" class="alert d-none status-alert" role="alert" aria-live="polite"></div>
 
     <div class="row g-4">
       <div class="col-lg-6">
-        <section class="card shadow-sm">
+        <section class="card shadow-sm surface-card">
           <div class="card-body">
-            <h2 class="h5">Approve Scholarship</h2>
+            <div class="card-title-row">
+              <h2 class="h5 mb-0">Approve Scholarship</h2>
+              <span class="tag-chip brand">Step 1</span>
+            </div>
             <form id="approveForm" class="row g-3 mt-1">
               <div class="col-12">
                 <label class="form-label">Student Wallet Address</label>
                 <input id="studentAddress" class="form-control" required placeholder="0x..." />
+                <small class="form-hint">Use the student recipient wallet address on the active network.</small>
               </div>
               <div class="col-12">
                 <label class="form-label">Amount (Wei)</label>
                 <input id="amountWei" type="number" min="1" class="form-control" required />
+                <small class="form-hint">Enter the total approved scholarship amount in wei.</small>
               </div>
               <div class="col-md-6">
                 <label class="form-label">Installments</label>
                 <input id="installments" type="number" min="1" class="form-control" value="2" required />
+                <small class="form-hint">How many parts the total award should be split into.</small>
               </div>
               <div class="col-md-6">
                 <label class="form-label">Claim Window (seconds)</label>
                 <input id="claimWindowSeconds" type="number" min="1" class="form-control" value="86400" required />
+                <small class="form-hint">Time allowed for each installment claim after release.</small>
               </div>
               <div class="col-12">
                 <button type="submit" class="btn btn-primary">Approve</button>
@@ -47,17 +55,22 @@
       </div>
 
       <div class="col-lg-6">
-        <section class="card shadow-sm">
+        <section class="card shadow-sm surface-card">
           <div class="card-body">
-            <h2 class="h5">Release Installment</h2>
+            <div class="card-title-row">
+              <h2 class="h5 mb-0">Release Installment</h2>
+              <span class="tag-chip info">Step 2</span>
+            </div>
             <form id="releaseForm" class="row g-3 mt-1">
               <div class="col-12">
                 <label class="form-label">Student Wallet Address</label>
                 <input id="releaseStudentAddress" class="form-control" required placeholder="0x..." />
+                <small class="form-hint">Must match an already approved scholarship recipient.</small>
               </div>
               <div class="col-12">
                 <label class="form-label">Installment Number</label>
                 <input id="installmentNumber" type="number" min="1" class="form-control" required />
+                <small class="form-hint">Use 1 for first installment, then increase sequentially.</small>
               </div>
               <div class="col-12">
                 <button type="submit" class="btn btn-dark">Release</button>

@@ -14,22 +14,30 @@
       <h1 class="h3 mb-0">Student Dashboard</h1>
       <a href="index.html" class="btn btn-outline-secondary btn-sm">Back</a>
     </div>
+    <p class="task-meta mb-4">Connect your wallet, then claim installments that an admin has already released and are still inside the claim window.</p>
 
-    <div class="card shadow-sm mb-4">
+    <div class="card shadow-sm surface-card mb-4">
       <div class="card-body">
-        <h2 class="h5">Connect Wallet</h2>
+        <div class="card-title-row">
+          <h2 class="h5 mb-0">Connect Wallet</h2>
+          <span class="tag-chip brand">Required</span>
+        </div>
         <button id="connectBtn" class="btn btn-primary">Connect</button>
-        <p id="walletInfo" class="text-secondary mt-2 mb-0">No wallet connected.</p>
+        <p id="walletInfo" class="wallet-pill mb-0">No wallet connected.</p>
       </div>
     </div>
 
-    <div class="card shadow-sm mb-4">
+    <div class="card shadow-sm surface-card mb-4">
       <div class="card-body">
-        <h2 class="h5">Claim Released Installment</h2>
+        <div class="card-title-row">
+          <h2 class="h5 mb-0">Claim Released Installment</h2>
+          <span class="tag-chip info">Action</span>
+        </div>
         <form id="claimForm" class="row g-3 mt-1">
           <div class="col-sm-6 col-md-4">
             <label class="form-label">Installment Number</label>
             <input id="claimInstallmentNumber" type="number" min="1" class="form-control" required />
+            <small class="form-hint">Enter the released installment number you want to claim.</small>
           </div>
           <div class="col-12">
             <button type="submit" class="btn btn-dark">Claim</button>
