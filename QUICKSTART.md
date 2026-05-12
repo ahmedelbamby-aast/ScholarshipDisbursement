@@ -2,6 +2,11 @@
 
 This guide explains how to set up, run, test, and operate the Scholarship Disbursement system in a local environment and with Docker.
 
+Project runtime entry points:
+- Frontend pages: `frontend/index.html`, `frontend/admin.html`, `frontend/student-dashboard.html`
+- Frontend scripts: `frontend/js/admin-dashboard.js`, `frontend/js/student-dashboard.js`
+- Backend app: `backend/src/app.js` and `backend/src/server.js`
+
 ## 1) Prerequisites
 
 - Node.js 20+
@@ -59,6 +64,9 @@ Run complete tests:
 npm run test:all
 ```
 
+Windows PowerShell note:
+- If `npm` is blocked by execution policy, use `npm.cmd` instead (for example `npm.cmd run test:all`).
+
 ## 5) Local environment run (without Docker)
 
 ### Step 5.1 Start local blockchain node
@@ -98,7 +106,7 @@ curl http://localhost:4000/api/health
 In terminal D:
 
 ```bash
-npm run start
+npm run start:frontend
 ```
 
 Open:
@@ -198,8 +206,8 @@ curl http://localhost:4000/api/scholarships/approved
 
 ```mermaid
 flowchart LR
-  A[Admin Dashboard\nadmin.html] --> B[Backend API\nExpress]
-  S[Student Dashboard\nstudent-dashboard.html] --> C[ScholarshipApprovalRelease\nSolidity Contract]
+  A[Admin Dashboard\nfrontend/admin.html] --> B[Backend API\nExpress]
+  S[Student Dashboard\nfrontend/student-dashboard.html] --> C[ScholarshipApprovalRelease\nSolidity Contract]
   B --> C
   B --> D[(Supabase)]
   C --> E[(EVM/Hardhat Node)]
@@ -287,3 +295,7 @@ flowchart LR
 - Failing chain interactions
   - local mode: ensure `npx hardhat node` is running
   - docker mode: ensure `chain` service is healthy
+- Hardhat `MultiProcessMutexTimeoutError` on compiler cache lock
+  - wait and rerun (interrupted runs can leave transient locks)
+  - avoid running multiple Hardhat test/compile commands in parallel
+  - run tests sequentially (feature tests first, then integration/system)

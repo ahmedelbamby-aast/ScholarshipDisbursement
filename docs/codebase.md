@@ -17,6 +17,7 @@ This repository implements a scholarship approval and installment-disbursement s
 - `types/ethers-contracts/`: generated ethers typings/factories.
 - `chain/`, `deployer/`, `backend/` Dockerfiles + root `Dockerfile`: containerized services.
 - `frontend/index.html`, `frontend/admin.html`, `frontend/student-dashboard.html`: UI pages.
+- `frontend/js/admin-dashboard.js`, `frontend/js/student-dashboard.js`: frontend behavior scripts.
 - `server.js`: static frontend host.
 - `docker-compose.yml`: full stack orchestration.
 - `reference Labs/`: lab/reference materials, separate from main runtime path.
@@ -24,9 +25,9 @@ This repository implements a scholarship approval and installment-disbursement s
 ## 3) Runtime Architecture
 ```mermaid
 flowchart LR
-  A[Admin UI\nadmin.html] -->|POST /api/scholarships/approve| B[Backend API\nExpress]
+  A[Admin UI\nfrontend/admin.html] -->|POST /api/scholarships/approve| B[Backend API\nExpress]
   A -->|POST /api/scholarships/release| B
-  S[Student UI\nstudent-dashboard.html] -->|Claim via MetaMask| C[Contract ScholarshipApprovalRelease]
+  S[Student UI\nfrontend/student-dashboard.html] -->|Claim via MetaMask| C[Contract ScholarshipApprovalRelease]
   B -->|ethers Wallet\nADMIN_PRIVATE_KEY| C
   P[Provider/Funder] -->|fundScholarship payable| C
   B -->|optional inserts| D[(Supabase)]
@@ -142,6 +143,8 @@ sequenceDiagram
 - `frontend/index.html`: landing links.
 - `frontend/admin.html`: submit approval/release forms to backend.
 - `frontend/student-dashboard.html`: MetaMask connect + direct claim transaction (`claimInstallment`) using `window.CONTRACT_ADDRESS`.
+- `frontend/js/admin-dashboard.js`: admin form wiring + API calls + status rendering.
+- `frontend/js/student-dashboard.js`: wallet connect + claim flow + status rendering.
 - `server.js`: serves static files and `/health`.
 
 ```mermaid
@@ -339,6 +342,8 @@ mindmap
       index.html landing
       admin.html admin actions
       student-dashboard.html wallet claim
+      js/admin-dashboard.js logic
+      js/student-dashboard.js logic
       server.js static host
     Infra
       docker-compose.yml
