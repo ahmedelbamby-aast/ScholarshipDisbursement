@@ -56,4 +56,27 @@ describe("Feature: scholarship approval", function () {
       contract.connect(admin).approveScholarship(student.address, 1, 1, 0)
     ).to.be.revertedWith("Claim window must be greater than zero");
   });
+
+  it("blocks re-approval while scholarship is active and allows it after completion", async function () {
+    const { ethers } = await network.create();
+    const { contract, admin, provider, student } = await deployFixture();
+    const total = ethers.parseEther("3");
+
+    await contract.connect(admin).approveScholarship(student.address, total, 3, 3600);
+    await expect(
+      contract.connect(admin).approveScholarship(student.address, total, 3, 3600)
+    ).to.be.revertedWith("Existing active scholarship");
+
+    await contract.connect(provider).fundScholarship({ value: total });
+    await contract.connect(admin).releaseInstallment(student.address, 1);
+    await contract.connect(student).claimInstallment(1);
+    await contract.connect(admin).releaseInstallment(student.address, 2);
+    await contract.connect(student).claimInstallment(2);
+    await contract.connect(admin).releaseInstallment(student.address, 3);
+    await contract.connect(student).claimInstallment(3);
+
+    await expect(
+      contract.connect(admin).approveScholarship(student.address, total, 1, 3600)
+    ).to.not.be.reverted;
+  });
 });

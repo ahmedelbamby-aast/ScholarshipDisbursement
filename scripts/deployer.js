@@ -10,6 +10,7 @@ const chainRpcUrl = process.env.CHAIN_RPC_URL || process.env.DOCKER_RPC_URL || "
 const adminPrivateKey = process.env.ADMIN_PRIVATE_KEY || defaultPrivateKey;
 const explicitContractAddress = process.env.CONTRACT_ADDRESS || "";
 const outputPath = process.env.CONTRACT_ADDRESS_FILE || "/runtime/contract-address";
+const outputMetaPath = process.env.CONTRACT_METADATA_FILE || "/runtime/contract-metadata.json";
 const contractSourcePath = path.resolve(process.cwd(), "contracts/ScholarshipApprovalRelease.sol");
 
 async function main() {
@@ -17,6 +18,12 @@ async function main() {
 
   if (explicitContractAddress) {
     writeContractAddress(explicitContractAddress);
+    writeContractMetadata({
+      contractAddress: explicitContractAddress,
+      rpcUrl: chainRpcUrl,
+      chainId: Number(process.env.CHAIN_ID || 31337),
+      source: "env",
+    });
     console.log(`Using provided contract address: ${explicitContractAddress}`);
     return;
   }
@@ -33,6 +40,14 @@ async function main() {
 
   const deployedAddress = await contract.getAddress();
   writeContractAddress(deployedAddress);
+  writeContractMetadata({
+    contractAddress: deployedAddress,
+    deployer: wallet.address,
+    rpcUrl: chainRpcUrl,
+    chainId: Number(process.env.CHAIN_ID || 31337),
+    txHash: contract.deploymentTransaction()?.hash || "",
+    source: "deployer",
+  });
   console.log(`Deployed ScholarshipApprovalRelease to ${deployedAddress}`);
 }
 
@@ -80,6 +95,22 @@ function compileContract(sourceCode) {
 function writeContractAddress(address) {
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
   fs.writeFileSync(outputPath, `${address}\n`, "utf8");
+}
+
+function writeContractMetadata(metadata) {
+  fs.mkdirSync(path.dirname(outputMetaPath), { recursive: true });
+  fs.writeFileSync(
+    outputMetaPath,
+    JSON.stringify(
+      {
+        ...metadata,
+        createdAt: new Date().toISOString(),
+      },
+      null,
+      2
+    ),
+    "utf8"
+  );
 }
 
 async function waitForRpc(url, retries, delayMs) {

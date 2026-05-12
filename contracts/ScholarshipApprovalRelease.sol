@@ -113,10 +113,7 @@ contract ScholarshipApprovalRelease {
         require(claimWindowSeconds > 0, "Claim window must be greater than zero");
 
         Scholarship storage record = scholarships[student];
-        require(
-            !record.approved || record.claimedInstallments == record.installments,
-            "Existing active scholarship"
-        );
+        require(!_isScholarshipActive(record), "Existing active scholarship");
 
         scholarships[student] = Scholarship({
             approved: true,
@@ -149,7 +146,7 @@ contract ScholarshipApprovalRelease {
         Scholarship storage record = scholarships[student];
 
         require(record.approved, "Student is not approved");
-        require(installmentNumber > 0 && installmentNumber <= record.installments, "Installment number out of range");
+        _validateInstallmentNumber(record, installmentNumber);
         require(
             installmentNumber == record.releasedInstallments + 1,
             "Installments must be released in order"
@@ -159,17 +156,8 @@ contract ScholarshipApprovalRelease {
         require(fundedBalance >= releaseAmount, "Insufficient funded balance");
 
         uint256 deadline = block.timestamp + record.claimWindowSeconds;
-        installmentRecords[student][installmentNumber] = Installment({
-            released: true,
-            claimed: false,
-            amount: releaseAmount,
-            releasedAt: block.timestamp,
-            claimDeadline: deadline
-        });
-
-        record.releasedInstallments += 1;
-        record.releasedAmount += releaseAmount;
-        fundedBalance -= releaseAmount;
+        _recordInstallmentRelease(student, installmentNumber, releaseAmount, deadline);
+        _applyReleaseToScholarship(record, releaseAmount);
 
         emit InstallmentReleased(student, installmentNumber, releaseAmount, deadline);
     }
@@ -243,5 +231,40 @@ contract ScholarshipApprovalRelease {
         }
 
         return record.totalAmount / record.installments;
+    }
+
+    function _isScholarshipActive(Scholarship storage record) private view returns (bool) {
+        return record.approved && record.claimedInstallments != record.installments;
+    }
+
+    function _validateInstallmentNumber(
+        Scholarship storage record,
+        uint256 installmentNumber
+    ) private view {
+        require(
+            installmentNumber > 0 && installmentNumber <= record.installments,
+            "Installment number out of range"
+        );
+    }
+
+    function _recordInstallmentRelease(
+        address student,
+        uint256 installmentNumber,
+        uint256 amount,
+        uint256 deadline
+    ) private {
+        installmentRecords[student][installmentNumber] = Installment({
+            released: true,
+            claimed: false,
+            amount: amount,
+            releasedAt: block.timestamp,
+            claimDeadline: deadline
+        });
+    }
+
+    function _applyReleaseToScholarship(Scholarship storage record, uint256 releaseAmount) private {
+        record.releasedInstallments += 1;
+        record.releasedAmount += releaseAmount;
+        fundedBalance -= releaseAmount;
     }
 }

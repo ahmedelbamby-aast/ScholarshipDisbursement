@@ -11,6 +11,8 @@ const config = {
   contractAddress: process.env.CONTRACT_ADDRESS || "",
   contractAddressFile:
     process.env.CONTRACT_ADDRESS_FILE || `${process.cwd()}/runtime/contract-address`,
+  contractMetadataFile:
+    process.env.CONTRACT_METADATA_FILE || `${process.cwd()}/runtime/contract-metadata.json`,
   adminPrivateKey: process.env.ADMIN_PRIVATE_KEY || defaultHardhatPrivateKey,
   chainId: Number(process.env.CHAIN_ID || 31337),
   databaseUrl: process.env.DATABASE_URL || "",

@@ -56,4 +56,24 @@ describe("Feature: controlled fund release", function () {
       contract.connect(admin).releaseInstallment(student.address, 2)
     ).to.be.revertedWith("Installment number out of range");
   });
+
+  it("applies exact remainder on final installment", async function () {
+    const { ethers } = await network.create();
+    const { contract, admin, provider, student } = await deployFixture();
+    const total = 10n;
+
+    await contract.connect(admin).approveScholarship(student.address, total, 3, 3600);
+    await contract.connect(provider).fundScholarship({ value: total });
+
+    await contract.connect(admin).releaseInstallment(student.address, 1);
+    await contract.connect(admin).releaseInstallment(student.address, 2);
+    await contract.connect(admin).releaseInstallment(student.address, 3);
+
+    const i1 = await contract.getInstallmentInfo(student.address, 1);
+    const i2 = await contract.getInstallmentInfo(student.address, 2);
+    const i3 = await contract.getInstallmentInfo(student.address, 3);
+    expect(i1.amount).to.equal(3n);
+    expect(i2.amount).to.equal(3n);
+    expect(i3.amount).to.equal(4n);
+  });
 });

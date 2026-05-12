@@ -13,7 +13,7 @@ const CONTRACT_ABI = [
 function getContract() {
   const contractAddress = getResolvedContractAddress();
 
-  if (!contractAddress || !config.adminPrivateKey) {
+  if (!contractAddress || !config.adminPrivateKey || !ethers.isAddress(contractAddress)) {
     return null;
   }
 
@@ -35,6 +35,12 @@ function getContract() {
 }
 
 function getResolvedContractAddress() {
+  const metadata = getResolvedContractMetadata();
+
+  if (metadata?.contractAddress) {
+    return String(metadata.contractAddress).trim();
+  }
+
   if (config.contractAddress) {
     return config.contractAddress;
   }
@@ -49,9 +55,23 @@ function getResolvedContractAddress() {
   return "";
 }
 
+function getResolvedContractMetadata() {
+  const metadataPath = config.contractMetadataFile || "";
+
+  if (!metadataPath || !fs.existsSync(metadataPath)) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(fs.readFileSync(metadataPath, "utf8"));
+  } catch (_error) {
+    return null;
+  }
+}
+
 let runtimeCache = {
   cacheKey: "",
   contract: null,
 };
 
-export { getContract };
+export { getContract, getResolvedContractMetadata };

@@ -47,6 +47,7 @@ services:
       CHAIN_ID: ${CHAIN_ID:-31337}
       CONTRACT_ADDRESS: ${CONTRACT_ADDRESS:-}
       CONTRACT_ADDRESS_FILE: /runtime/contract-address
+      CONTRACT_METADATA_FILE: /runtime/contract-metadata.json
       ADMIN_PRIVATE_KEY: ${ADMIN_PRIVATE_KEY:-}
       TX_TIMEOUT_MS: ${TX_TIMEOUT_MS:-120000}
     volumes:
@@ -68,6 +69,7 @@ services:
       CHAIN_ID: ${CHAIN_ID:-31337}
       CONTRACT_ADDRESS: ""
       CONTRACT_ADDRESS_FILE: /runtime/contract-address
+      CONTRACT_METADATA_FILE: /runtime/contract-metadata.json
       ADMIN_PRIVATE_KEY: ${ADMIN_PRIVATE_KEY:-}
       DATABASE_URL: ${DOCKER_DATABASE_URL:-postgresql://${POSTGRES_USER:-scholarship}:${POSTGRES_PASSWORD:-scholarship}@postgres:5432/${POSTGRES_DB:-scholarship}}
       TX_TIMEOUT_MS: ${TX_TIMEOUT_MS:-120000}
