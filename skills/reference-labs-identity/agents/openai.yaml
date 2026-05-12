@@ -1,0 +1,3 @@
+display_name: Reference Labs Identity
+short_description: Enforce Reference Labs code identity during refactors
+default_prompt: Align this codebase with the Reference Labs architecture/style identity while preserving all existing features and API/contract behavior.
