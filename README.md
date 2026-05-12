@@ -28,7 +28,7 @@ The requested scope was checked against this project and implemented where missi
 - Hardhat + ethers.js
 - Admin dashboard (`frontend/admin.html`) and student dashboard (`frontend/student-dashboard.html`)
 - Node.js/Express backend (`backend/src`)
-- Supabase integration hooks for audit persistence
+- PostgreSQL persistence for audit history
 
 ## Test Strategy and Status
 
@@ -86,11 +86,11 @@ So after `docker compose up -d`, the stack is ready without manual blockchain/de
 
 ## Deployment Plan
 
-### 1) Supabase (database)
+### 1) PostgreSQL (database)
 
-- Create a Supabase project
-- Run schema in `supabase/schema.sql`
-- Set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in backend env
+- Use Docker service `postgres` (auto-initialized) or any managed PostgreSQL
+- Run schema in `postgres/init/001_schema.sql` if not using the Docker bootstrap
+- Set `DATABASE_URL` in backend env
 
 ### 2) Render (backend)
 

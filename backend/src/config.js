@@ -13,8 +13,7 @@ const config = {
     process.env.CONTRACT_ADDRESS_FILE || `${process.cwd()}/runtime/contract-address`,
   adminPrivateKey: process.env.ADMIN_PRIVATE_KEY || defaultHardhatPrivateKey,
   chainId: Number(process.env.CHAIN_ID || 31337),
-  supabaseUrl: process.env.SUPABASE_URL || "",
-  supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY || "",
+  databaseUrl: process.env.DATABASE_URL || "",
   txTimeoutMs: Number(process.env.TX_TIMEOUT_MS || 120000),
 };
 

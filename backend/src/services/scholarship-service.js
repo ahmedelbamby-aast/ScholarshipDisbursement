@@ -3,7 +3,7 @@ import {
   getApprovedStudents as getApprovedStudentsOnChain,
   releaseInstallment as releaseOnChain,
 } from "./contract-service.js";
-import { saveApprovalAudit, saveReleaseAudit } from "../repositories/audit-repository.js";
+import { getAuditHistory, saveApprovalAudit, saveReleaseAudit } from "../repositories/audit-repository.js";
 
 async function approveScholarship(payload, txTimeoutMs) {
   const { txHash } = await approveOnChain(payload, txTimeoutMs);
@@ -35,4 +35,8 @@ async function getApprovedStudents() {
   return getApprovedStudentsOnChain();
 }
 
-export { approveScholarship, releaseInstallment, getApprovedStudents };
+async function listAuditHistory(query) {
+  return getAuditHistory(query);
+}
+
+export { approveScholarship, releaseInstallment, getApprovedStudents, listAuditHistory };

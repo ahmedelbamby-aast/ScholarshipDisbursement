@@ -1,4 +1,22 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-scholarship}
+      POSTGRES_USER: ${POSTGRES_USER:-scholarship}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-scholarship}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-scholarship} -d ${POSTGRES_DB:-scholarship}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
   chain:
     build:
       context: .
@@ -30,6 +48,7 @@ services:
       CONTRACT_ADDRESS: ${CONTRACT_ADDRESS:-}
       CONTRACT_ADDRESS_FILE: /runtime/contract-address
       ADMIN_PRIVATE_KEY: ${ADMIN_PRIVATE_KEY:-}
+      TX_TIMEOUT_MS: ${TX_TIMEOUT_MS:-120000}
     volumes:
       - runtime_data:/runtime
     depends_on:
@@ -50,13 +69,15 @@ services:
       CONTRACT_ADDRESS: ""
       CONTRACT_ADDRESS_FILE: /runtime/contract-address
       ADMIN_PRIVATE_KEY: ${ADMIN_PRIVATE_KEY:-}
-      SUPABASE_URL: ${SUPABASE_URL:-}
-      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-}
+      DATABASE_URL: ${DOCKER_DATABASE_URL:-postgresql://${POSTGRES_USER:-scholarship}:${POSTGRES_PASSWORD:-scholarship}@postgres:5432/${POSTGRES_DB:-scholarship}}
+      TX_TIMEOUT_MS: ${TX_TIMEOUT_MS:-120000}
     volumes:
       - runtime_data:/runtime
     ports:
       - "4000:4000"
     depends_on:
+      postgres:
+        condition: service_healthy
       chain:
         condition: service_healthy
       deployer:
@@ -68,6 +89,12 @@ services:
       dockerfile: Dockerfile
     environment:
       FRONTEND_PORT: 3300
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3300/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
     ports:
       - "3300:3300"
     depends_on:
@@ -76,3 +103,4 @@ services:
 
 volumes:
   runtime_data:
+  pg_data:

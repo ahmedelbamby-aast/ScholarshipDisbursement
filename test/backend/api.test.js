@@ -21,4 +21,10 @@ describe("Backend API", function () {
     expect(response.status).to.equal(400);
     expect(response.body.error).to.be.a("string");
   });
+
+  it("returns deterministic error for audit history when DB is not configured", async function () {
+    const response = await request(app).get("/api/audits/history?page=1&pageSize=5");
+    expect(response.status).to.equal(503);
+    expect(response.body.error).to.equal("PostgreSQL not configured");
+  });
 });

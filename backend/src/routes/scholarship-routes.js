@@ -4,9 +4,11 @@ import { parseApprovalPayload, parseReleasePayload } from "../validators/scholar
 import {
   approveScholarship,
   getApprovedStudents,
+  listAuditHistory,
   releaseInstallment,
 } from "../services/scholarship-service.js";
 import config from "../config.js";
+import { parseAuditHistoryQuery } from "../validators/pagination.js";
 
 const scholarshipRouter = Router();
 
@@ -36,6 +38,16 @@ scholarshipRouter.get("/api/scholarships/approved", async (_req, res, next) => {
     return res.status(200).json({ ok: true, students });
   } catch (error) {
     return next(normalizeRouteError(error, "Read failed"));
+  }
+});
+
+scholarshipRouter.get("/api/audits/history", async (req, res, next) => {
+  try {
+    const query = parseAuditHistoryQuery(req.query);
+    const history = await listAuditHistory(query);
+    return res.status(200).json({ ok: true, ...history });
+  } catch (error) {
+    return next(normalizeRouteError(error, "Audit history read failed"));
   }
 });
 

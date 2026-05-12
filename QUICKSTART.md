@@ -45,10 +45,10 @@ Docker behavior:
 - `CONTRACT_ADDRESS` may be empty; backend bootstrap deploys contract automatically in Docker and reads from `/app/runtime/contract-address`
 - if `ADMIN_PRIVATE_KEY` is empty, default Hardhat local dev key is used
 
-Optional audit persistence (Supabase):
+Optional audit persistence (PostgreSQL):
 
-- `SUPABASE_URL=<supabase-url>`
-- `SUPABASE_SERVICE_ROLE_KEY=<service-role-key>`
+- `DATABASE_URL=postgresql://<user>:<password>@<host>:5432/<db>`
+- `DOCKER_DATABASE_URL=postgresql://<user>:<password>@postgres:5432/<db>` (used by backend container)
 
 ## 4) Compile and test first (recommended)
 
@@ -116,8 +116,9 @@ Open:
 
 ## 6) Docker setup
 
-This path is fully automated now using 4 connected images/services:
+This path is fully automated now using 5 connected images/services:
 
+- `postgres` (audit persistence with auto-applied schema)
 - `chain` (Ganache JSON-RPC)
 - `deployer` (one-shot contract deployment)
 - `backend` (API)
@@ -141,7 +142,7 @@ Check status:
 docker compose ps
 ```
 
-Expected: `chain`, `backend`, and `frontend` become `healthy`.
+Expected: `postgres`, `chain`, `backend`, and `frontend` become `healthy`.
 
 `deployer` should show `Exited (0)` after successful deployment.
 
@@ -209,7 +210,7 @@ flowchart LR
   A[Admin Dashboard\nfrontend/admin.html] --> B[Backend API\nExpress]
   S[Student Dashboard\nfrontend/student-dashboard.html] --> C[ScholarshipApprovalRelease\nSolidity Contract]
   B --> C
-  B --> D[(Supabase)]
+  B --> D[(PostgreSQL)]
   C --> E[(EVM/Hardhat Node)]
 ```
 
@@ -269,7 +270,7 @@ flowchart TB
   U[User Browser] --> F
   F --> B
   B --> C
-  B --> DB[(Supabase)]
+  B --> DB[(PostgreSQL)]
 ```
 
 ### 9.5 CI test pipeline concept

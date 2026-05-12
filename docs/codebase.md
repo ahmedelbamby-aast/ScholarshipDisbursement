@@ -3,17 +3,17 @@
 ## 1) Repository Overview
 This repository implements a scholarship approval and installment-disbursement system with:
 - A Solidity smart contract for approval, funding, release, claim, and expired-claim recovery.
-- A Node/Express backend exposing admin APIs that call the contract and optionally persist audit records in Supabase.
+- A Node/Express backend exposing admin APIs that call the contract and optionally persist audit records in PostgreSQL.
 - Static frontend pages for admin and student interactions.
 - Local/Docker runtime orchestration for chain + deployer + backend + frontend.
 - Multi-layer tests (unit feature, integration, system/e2e, backend API, frontend structure).
 
 ## 2) Top-Level Structure
 - `contracts/`: on-chain source (`ScholarshipApprovalRelease.sol`).
-- `backend/src/`: backend app, contract adapter, config, Supabase adapter, server bootstrap.
+- `backend/src/`: backend app, contract adapter, config, PostgreSQL adapter, server bootstrap.
 - `scripts/`: deployment scripts for local Hardhat and Docker deployer flow.
 - `test/`: smart contract + API + frontend tests.
-- `supabase/`: SQL schema for approval/release audit tables.
+- `postgres/init/`: SQL schema for approval/release audit tables.
 - `types/ethers-contracts/`: generated ethers typings/factories.
 - `chain/`, `deployer/`, `backend/` Dockerfiles + root `Dockerfile`: containerized services.
 - `frontend/index.html`, `frontend/admin.html`, `frontend/student-dashboard.html`: UI pages.
@@ -30,7 +30,7 @@ flowchart LR
   S[Student UI\nfrontend/student-dashboard.html] -->|Claim via MetaMask| C[Contract ScholarshipApprovalRelease]
   B -->|ethers Wallet\nADMIN_PRIVATE_KEY| C
   P[Provider/Funder] -->|fundScholarship payable| C
-  B -->|optional inserts| D[(Supabase)]
+  B -->|optional inserts| D[(PostgreSQL)]
   C -->|events| E[Audit Trail\nOn-chain logs]
 ```
 
@@ -112,10 +112,10 @@ classDiagram
 
 ## 6) API Surface (Backend)
 ### Files
-- `backend/src/app.js`: routes + validation + contract calls + optional Supabase insert.
+- `backend/src/app.js`: routes + validation + contract calls + optional PostgreSQL insert.
 - `backend/src/contract.js`: ethers contract client, address resolution from env/file.
 - `backend/src/config.js`: env-backed config + defaults.
-- `backend/src/supabase.js`: optional client creation.
+- `backend/src/postgres.js`: optional client creation.
 - `backend/src/server.js`: starts backend listener.
 
 ### Endpoints
@@ -129,7 +129,7 @@ sequenceDiagram
   participant Admin as Admin UI
   participant API as Backend API
   participant ETH as Contract (ethers signer)
-  participant DB as Supabase
+  participant DB as PostgreSQL
 
   Admin->>API: POST /api/scholarships/approve
   API->>API: Validate address/amount/installments/window
@@ -159,8 +159,8 @@ stateDiagram-v2
   Error --> Connected: retry
 ```
 
-## 8) Database Schema (Supabase)
-`supabase/schema.sql` defines two audit tables:
+## 8) Database Schema (PostgreSQL)
+`postgres/init/schema.sql` defines two audit tables:
 - `scholarship_approvals`
 - `scholarship_releases`
 
@@ -337,7 +337,7 @@ mindmap
       app.js routes
       contract.js ethers adapter
       config.js env defaults
-      supabase.js optional persistence
+      PostgreSQL.js optional persistence
     Frontend
       index.html landing
       admin.html admin actions
@@ -357,7 +357,7 @@ mindmap
       backend API
       frontend smoke
     Data
-      supabase schema
+      PostgreSQL schema
       approvals table
       releases table
     Generated Types

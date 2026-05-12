@@ -80,6 +80,50 @@
         </section>
       </div>
     </div>
+
+    <section class="card shadow-sm surface-card mt-4">
+      <div class="card-body">
+        <div class="card-title-row">
+          <h2 class="h5 mb-0">Recent Activity</h2>
+          <span class="tag-chip info">Audit</span>
+        </div>
+        <div class="row g-2 align-items-end mb-3">
+          <div class="col-md-5">
+            <label class="form-label" for="auditStudentAddress">Filter by Student Address</label>
+            <input id="auditStudentAddress" class="form-control" placeholder="0x... (optional)" />
+          </div>
+          <div class="col-md-2">
+            <label class="form-label" for="auditPageSize">Page Size</label>
+            <select id="auditPageSize" class="form-select">
+              <option value="5">5</option>
+              <option value="10" selected>10</option>
+              <option value="20">20</option>
+            </select>
+          </div>
+          <div class="col-md-5 d-flex gap-2">
+            <button id="refreshAuditBtn" class="btn btn-outline-primary">Refresh</button>
+            <button id="prevAuditBtn" class="btn btn-outline-secondary">Prev</button>
+            <button id="nextAuditBtn" class="btn btn-outline-secondary">Next</button>
+          </div>
+        </div>
+        <div id="auditMeta" class="task-meta mb-2">No audit data loaded.</div>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle">
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Student</th>
+                <th>Tx Hash</th>
+                <th>Created At</th>
+              </tr>
+            </thead>
+            <tbody id="auditRows">
+              <tr><td colspan="4" class="text-secondary">Use Refresh to load audit history.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
   </main>
 
   <script src="js/common.js"></script>
