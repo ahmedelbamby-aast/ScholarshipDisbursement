@@ -1,107 +1,141 @@
-# ScholarshipDisbursement
-### Overview
-This is a proof-of-concept smart contracts built using solidity to show the automation on study loan/scholarship disbursement using blockchain. The smart contract is separated into 3 parts, student, loan/scholarship provider and university staff. A decentralised web application (dApp) has been created using ethers.js to connect with the smart contracts and metamask. The dApp allows higher education staff, loan/scholarship institutions and students to interact with the private Ethereum network and transfer the money disbursement automatically once the disbursement requirements are met.
+# Scholarship Disbursement
 
-### Wallet used
-I am using web wallet - Metamask for this project. For this particular project version, I am using Ganache for the deployment and testing. There are 2 more versions using different testnets in other repository folders (Rinkeby and Goerli).
+Scholarship approval and release platform with a Solidity contract, Hardhat tests, admin/student dashboards, and an Express backend ready for local and containerized delivery.
 
-For more information
-1. Metamask refer to this link: https://metamask.io/
-2. Ganache refer to this link: https://trufflesuite.com/ganache/
+## Requirement Check (Ahmed Banby scope)
 
-### Solidity contracts
-There are 3 smart contracts on this project and all of them are deployed using ganache via Remix IDE, you can use the "ScholarshipDisbursement.sol" if you want to deploy the solidity contratcs to different blockchain via remix IDE. Or you can use the addresses below on remix IDE to look at the functions.
+The requested scope was checked against this project and implemented where missing:
 
-1. Student Smart Contract Addrress: 
-```
-0x933d60E5F1AEff1f37Dd5792Db0cd2E0fd9157d1
-```
-2. Scholarship Provider Smart Contract Addrress: 
-```
-0x967B23d6e0DD4170ecAeA46c1Fe92D94B11F1016
-```
-3. University Staff Smart Contract Addrress: 
-```
-0xfBf63710005a304556802b4bffC018585E041cf1
-```
+- `Scholarship Approval and Release Contract` -> implemented in `contracts/ScholarshipApprovalRelease.sol`
+- `Approved student list` -> `getApprovedStudents()` and `isApproved()`
+- `Amount per recipient` -> approval stores `totalAmount` per student
+- `Payout transaction` -> admin releases installment; student claims payout
+- `Admin-only approval` -> enforced via `onlyOwner`
+- `Installment release` -> `releaseInstallment(student, installmentNumber)`
+- `Claim window` -> `claimWindowSeconds` + per-installment `claimDeadline`
+- `Audit event log` -> events emitted for approval/funding/release/claim/recovery
 
-### Run the front end in local node
+## Current Scope
 
-##### Visual Studio Code
-I use Visual Studio Code to create and edit my project. You need also need Visual Studio Code to run the local web server. You can find the latest version here: https://code.visualstudio.com/
+- Active contract: `contracts/ScholarshipApprovalRelease.sol`
+- Active dashboards: `frontend/admin.html`, `frontend/student-dashboard.html`, `frontend/index.html`
+- Active backend: `backend/src/app.js`, `backend/src/server.js`
+- Legacy files removed from repository
 
-Then download all the files in this repository and put them into a single folder in your local drive. Remember to unzip any zip file.
+## Stack
 
-Open the folder using visual studio code.
+- Solidity payable contract
+- Hardhat + ethers.js
+- Admin dashboard (`frontend/admin.html`) and student dashboard (`frontend/student-dashboard.html`)
+- Node.js/Express backend (`backend/src`)
+- Supabase integration hooks for audit persistence
 
-##### Node.js and NPM (Node Package Manager)
-You need to have Node.js and NPM, which come together.
+## Test Strategy and Status
 
-NB: Check if Node and NPM are already installed by inputting the following commands in the terminal:
+All requested layers are present and passing:
 
-```
-node --version
-npm --version
-```
-If they are installed, you will see something like this
+- Single-feature tests
+  - `test/unit/approval.feature.test.js`
+  - `test/unit/release.feature.test.js`
+  - `test/unit/claim-window.feature.test.js`
+  - `test/unit/audit-events.feature.test.js`
+- Unit level: bundled via `npm run test:unit`
+- Integration level: `test/integration/workflow.integration.test.js`
+- System-wide level: `test/system/system-wide.e2e.test.js`
+- Backend API tests: `test/backend/api.test.js`
+- Frontend structure tests: `test/frontend/pages.test.js`
 
-![image](https://user-images.githubusercontent.com/99839809/192117838-4fd9495c-d778-41c4-b212-f9cbe36b7efd.png)
+Run all criteria in one command:
 
-
-Else go to https://nodejs.org/en/ if you need to install it.
-
-##### Running the local server
-To execute the local web server. Type the below in the terminal:
-```
-node server.js
+```bash
+npm run test:all
 ```
 
-![image](https://user-images.githubusercontent.com/99839809/192117550-9435c0c5-3e12-47cc-8013-c022a3ddd3f4.png)
+## Quickstart
 
-In your browser, go to the link below to access the frontend
+- A detailed step-by-step setup guide is available in `QUICKSTART.md`
+- Includes:
+  - local setup
+  - Docker setup
+  - full test strategy
+  - Mermaid architecture and workflow diagrams
 
-http://localhost:3300
+## Docker Delivery
 
-If the local web server is set up correctly, you will see the landing page below
+```bash
+docker compose build
+docker compose up -d
+docker compose ps
+```
 
-![image](https://user-images.githubusercontent.com/99839809/192117901-c943393a-78b5-454d-ae8a-60351f5221ab.png)
+What is auto-bootstrapped in Docker now:
 
-Each of the button in the landing page give you accesss as if to 3 different parties (Student, Scholarship Provider and University Staff)
+- `chain` service (dedicated image) starts local Ganache RPC (`8545`)
+- `deployer` service (dedicated image) waits for chain, deploys `ScholarshipApprovalRelease`, writes address to shared runtime volume
+- `backend` service (dedicated image) starts with prod dependencies and reads contract address from shared runtime volume
+- `frontend` waits for backend health
 
-### Student Page
-Student Page allows the student to enter their student code (numeric only) and their details. The smart contract will store the wallet ID to the student record when execute the transaction, this will be used later on the scholarship payment to pay student directly to their wallet.
+Services expose:
 
-Error message will show if try to store a student code that already exists in the blockchain
+- chain -> `http://localhost:8545`
+- deployer -> one-shot job (exits after successful deployment)
+- frontend -> `http://localhost:3300` (`/health`)
+- backend -> `http://localhost:4000` (`/api/health`)
 
-![image](https://user-images.githubusercontent.com/99839809/192118029-a31aff37-84be-4f59-847b-4a14bfc02beb.png)
+So after `docker compose up -d`, the stack is ready without manual blockchain/deployment steps.
 
+## Deployment Plan
 
-### Scholarship Provider Page
-Scholarship Provider Page allows the scholarship provider to add scholarship to the student. If the provider tries to add scholarship to the student code that is not exists in the blockchain, it will create an error message.
+### 1) Supabase (database)
 
-When the provider add the scholarship, the wallet address of the provider will be stored to the scholarship record and metamask will be executed to transfer the amount sponsored in Wei (because ganache has no chainlink to convert the currency, I use Wei here as the amount unit, you can refer the Rinkeby version for GBP as the amount unit or Goerli  version for USD in other repository folders) to the Staff smart contract for disbursement later.
+- Create a Supabase project
+- Run schema in `supabase/schema.sql`
+- Set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in backend env
 
-![image](https://user-images.githubusercontent.com/99839809/192118300-89556a2b-8cbe-44e0-9695-50492a0568bd.png)
+### 2) Render (backend)
 
-The provider can also cancel the scholarship if they decide not to sponsor by using the cancel scholarship function. The amount will not be return immediately to the provider, instead the university staff will need to process the refund.
+- Create a new Web Service from this repo
+- Build command: `npm install`
+- Start command: `npm run start:backend`
+- Set env vars from `.env.example`
+- Confirm health endpoint: `/api/health`
 
-![image](https://user-images.githubusercontent.com/99839809/192118313-1272159f-b9c2-41a0-b0d0-7866e37e0e93.png)
+### 3) Vercel (frontend)
 
+- Import the same repo
+- Framework preset: Other
+- Build command: leave empty
+- Output directory: `.`
+- Set frontend API target (if needed) to your Render URL
 
-### University Staff Page
-University Staff Page allows the staff to enter the attendance percentage and average result of the student, if the attendance and result meet the required percentage entered by the provider when add the scholarship, the student will be disbursed the scholarship amount directly to their wallet address. Else the scholarship will mark as failed.
+## Dependency Update Notes
 
-![image](https://user-images.githubusercontent.com/99839809/192118396-b3c1bcbb-9cae-41d4-aebd-c6f4ed0af137.png)
+- Updated incrementally and re-tested after changes:
+  - `dotenv` -> `17.4.2`
+  - `express` -> `5.2.1`
+  - `mocha` -> `11.7.5`
+- Completed migration to Hardhat 3-compatible stack:
+  - `hardhat` -> `3.4.2`
+  - `@nomicfoundation/hardhat-ethers` -> `4.0.9`
+  - `@nomicfoundation/hardhat-ethers-chai-matchers` -> `3.0.0`
+  - `@nomicfoundation/hardhat-mocha` -> `3.0.17`
+  - `@nomicfoundation/hardhat-network-helpers` -> `3.0.6`
+  - `chai` -> `5.2.2`
+- Removed deprecated chain from dependencies (`inflight` and `glob@7` no longer present)
 
-For those scholarships that have been cancelled by provider, staff can perform the refund to refund back the money of the provider from the smart contract. The money will be send to the provider wallet.
+## Environment Setup
 
-![image](https://user-images.githubusercontent.com/99839809/192118399-cfc65e3a-91b1-4574-9aee-7d199a814c1a.png)
+- `.env` is included for ready local/dev startup
+- Key values used:
+  - `RPC_URL=http://127.0.0.1:8545` (local backend)
+  - `DOCKER_RPC_URL=http://chain:8545` (backend in Docker)
+  - `CHAIN_ID=31337`
+  - `CONTRACT_ADDRESS` can be left empty in Docker (backend bootstrap auto-deploys and resolves from file)
+  - `ADMIN_PRIVATE_KEY` defaults to Hardhat local dev key if omitted
 
-For those failed scholarship due to not meeting the attendance and result criteria, staff can reactivate them to reinsert new result or attendance for the payment to be disbursed.
+## Notes
 
-![image](https://user-images.githubusercontent.com/99839809/192118402-54ae14b5-45f0-4e9c-bd51-39a6bbf9a136.png)
-
-
-
-
-
+- Core requested features are implemented and tested in contract + tests:
+  - Installment Release
+  - Claim Window
+  - Audit Event Log

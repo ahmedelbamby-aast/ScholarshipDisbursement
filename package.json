@@ -1,16 +1,49 @@
 {
-  "name": "student1",
+  "name": "scholarship-disbursement",
   "version": "1.0.0",
-  "description": "",
+  "description": "Scholarship approval and controlled release dApp",
+  "type": "module",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev": "node server.js",
+    "compile": "hardhat compile",
+    "test": "npm run test:all",
+    "test:feature:approval": "hardhat test test/unit/approval.feature.test.js",
+    "test:feature:release": "hardhat test test/unit/release.feature.test.js",
+    "test:feature:claim": "hardhat test test/unit/claim-window.feature.test.js",
+    "test:feature:audit": "hardhat test test/unit/audit-events.feature.test.js",
+    "test:unit": "npm run test:feature:approval && npm run test:feature:release && npm run test:feature:claim && npm run test:feature:audit",
+    "test:integration": "hardhat test test/integration/workflow.integration.test.js",
+    "test:system": "hardhat test test/system/system-wide.e2e.test.js",
+    "test:backend": "mocha \"test/backend/**/*.test.js\" --timeout 20000",
+    "test:frontend": "mocha \"test/frontend/**/*.test.js\" --timeout 10000",
+    "test:all": "npm run test:unit && npm run test:integration && npm run test:backend && npm run test:frontend && npm run test:system",
+    "deploy:local": "hardhat run scripts/deploy.js --network localhost",
+    "deploy:docker": "node scripts/deployer.js",
+    "start:backend": "node backend/src/server.js",
+    "start:frontend": "node server.js"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
-    "express": "^4.18.1"
+    "@supabase/supabase-js": "^2.49.8",
+    "cors": "^2.8.5",
+    "dotenv": "^17.4.2",
+    "ethers": "^6.15.0",
+    "express": "^5.2.1",
+    "helmet": "^8.1.0",
+    "solc": "^0.8.30"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-ethers": "^4.0.9",
+    "@nomicfoundation/hardhat-ethers-chai-matchers": "^3.0.0",
+    "@nomicfoundation/hardhat-mocha": "^3.0.17",
+    "@nomicfoundation/hardhat-network-helpers": "^3.0.6",
+    "chai": "^5.2.2",
+    "hardhat": "^3.4.2",
+    "mocha": "^11.7.5",
+    "supertest": "^7.1.4"
   }
 }

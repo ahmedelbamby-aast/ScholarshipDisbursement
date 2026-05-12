@@ -1,0 +1,78 @@
+services:
+  chain:
+    build:
+      context: .
+      dockerfile: chain/Dockerfile
+    ports:
+      - "8545:8545"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:8545',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',method:'eth_blockNumber',params:[],id:1})}).then(r=>r.json()).then(j=>process.exit(j.result?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 15s
+
+  deployer:
+    build:
+      context: .
+      dockerfile: deployer/Dockerfile
+    env_file:
+      - .env
+    environment:
+      CHAIN_RPC_URL: ${DOCKER_RPC_URL:-http://chain:8545}
+      CHAIN_ID: ${CHAIN_ID:-31337}
+      CONTRACT_ADDRESS: ${CONTRACT_ADDRESS:-}
+      CONTRACT_ADDRESS_FILE: /runtime/contract-address
+      ADMIN_PRIVATE_KEY: ${ADMIN_PRIVATE_KEY:-}
+    volumes:
+      - runtime_data:/runtime
+    depends_on:
+      chain:
+        condition: service_healthy
+    restart: "no"
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    env_file:
+      - .env
+    environment:
+      PORT: ${PORT:-4000}
+      RPC_URL: ${DOCKER_RPC_URL:-http://chain:8545}
+      CHAIN_ID: ${CHAIN_ID:-31337}
+      CONTRACT_ADDRESS: ""
+      CONTRACT_ADDRESS_FILE: /runtime/contract-address
+      ADMIN_PRIVATE_KEY: ${ADMIN_PRIVATE_KEY:-}
+      SUPABASE_URL: ${SUPABASE_URL:-}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-}
+    volumes:
+      - runtime_data:/runtime
+    ports:
+      - "4000:4000"
+    depends_on:
+      chain:
+        condition: service_healthy
+      deployer:
+        condition: service_completed_successfully
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      FRONTEND_PORT: 3300
+    ports:
+      - "3300:3300"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  runtime_data:

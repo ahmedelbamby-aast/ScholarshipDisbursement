@@ -1,0 +1,21 @@
+import { expect } from "chai";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+describe("Frontend pages", function () {
+  it("landing page links to admin and student dashboards", function () {
+    const html = fs.readFileSync(path.join(__dirname, "../../frontend/index.html"), "utf8");
+    expect(html).to.include("Admin Dashboard");
+    expect(html).to.include("Student Dashboard");
+  });
+
+  it("admin page contains approval and release sections", function () {
+    const html = fs.readFileSync(path.join(__dirname, "../../frontend/admin.html"), "utf8");
+    expect(html).to.include("Approve Scholarship");
+    expect(html).to.include("Release Installment");
+  });
+});
