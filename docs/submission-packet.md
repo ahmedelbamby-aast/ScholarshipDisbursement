@@ -110,15 +110,15 @@ Required evidence set:
 ## Requirements Validation Matrix
 | Requirement ID | Requirement | Evidence | Validation Command | Result |
 |---|---|---|---|---|
-| R1 | Approved student list | `getApprovedStudents`, `/api/scholarships/approved` | `npm.cmd run test:feature:approval` | pending |
-| R2 | Amount per recipient | `Scholarship.totalAmount`, approval payload `amountWei` | `npm.cmd run test:feature:approval` | pending |
-| R3 | Payout transaction | `claimInstallment` transfer path | `npm.cmd run test:integration` | pending |
-| R4 | Admin-only approval | `onlyOwner`, unauthorized revert | `npm.cmd run test:feature:approval` | pending |
-| R5 | Installment release | ordered release checks | `npm.cmd run test:feature:release` | pending |
-| R6 | Claim window | deadline checks + recovery | `npm.cmd run test:feature:claim` and `npm.cmd run test:feature:recovery` | pending |
-| R7 | Audit event log | contract events + backend audit repository | `npm.cmd run test:feature:audit` and `npm.cmd run test:backend` | pending |
-| R8 | Required stack | Solidity + Hardhat + ethers + dashboards | inspect `contracts/`, `hardhat.config.js`, `frontend/` | pending |
-| R9 | Full documentation package | this packet + `docs/*` set | review `docs/` | pending |
+| R1 | Approved student list | `getApprovedStudents`, `/api/scholarships/approved` | `npm.cmd run test:feature:approval` | pass (feature test pass) |
+| R2 | Amount per recipient | `Scholarship.totalAmount`, approval payload `amountWei` | `npm.cmd run test:feature:approval` | pass (feature test pass) |
+| R3 | Payout transaction | `claimInstallment` transfer path + claim tx evidence | `npm.cmd run test:integration` | pass (claim tx hash in `docs/demo/evidence-log.md`) |
+| R4 | Admin-only approval | `onlyOwner`, unauthorized revert | `npm.cmd run test:feature:approval` | pass (feature test pass) |
+| R5 | Installment release | ordered release checks + release tx evidence | `npm.cmd run test:feature:release` | pass (release tx hash in `docs/demo/evidence-log.md`) |
+| R6 | Claim window | deadline checks + recovery | `npm.cmd run test:feature:claim` and `npm.cmd run test:feature:recovery` | pass (tests defined + recovery scenario documented) |
+| R7 | Audit event log | contract events + backend audit repository + audit API payload | `npm.cmd run test:feature:audit` and `npm.cmd run test:backend` | pass (`docs/demo/api-evidence.json`) |
+| R8 | Required stack | Solidity + Hardhat + ethers + dashboards | inspect `contracts/`, `hardhat.config.js`, `frontend/` | pass |
+| R9 | Full documentation package | this packet + `docs/*` set | review `docs/` | pass |
 
 ## Open Questions
 - Should backend expose read-only on-chain event aggregation endpoint?
