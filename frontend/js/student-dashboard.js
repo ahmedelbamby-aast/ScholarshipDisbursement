@@ -8,6 +8,7 @@ const connectBtn = document.getElementById("connectBtn");
 const walletInfo = document.getElementById("walletInfo");
 const claimForm = document.getElementById("claimForm");
 const studentAlert = document.getElementById("studentAlert");
+const claimButton = claimForm.querySelector('button[type="submit"]');
 
 const ABI = [
   "function claimInstallment(uint256 installmentNumber)",
@@ -15,11 +16,11 @@ const ABI = [
 ];
 
 function showStudentAlert(message, success) {
-  studentAlert.className = `alert ${success ? "alert-success" : "alert-danger"}`;
-  studentAlert.textContent = message;
+  window.FrontendUtils.showAlert(studentAlert, message, success);
 }
 
 async function connectWallet() {
+  window.FrontendUtils.setButtonLoading(connectBtn, true, "Connect");
   try {
     if (!window.ethereum) {
       throw new Error("MetaMask is required");
@@ -40,11 +41,14 @@ async function connectWallet() {
     runtime.contract = new ethers.Contract(runtime.contractAddress, ABI, runtime.signer);
   } catch (error) {
     showStudentAlert(error.message || "Wallet connection failed", false);
+  } finally {
+    window.FrontendUtils.setButtonLoading(connectBtn, false, "Connect");
   }
 }
 
 async function submitClaim(event) {
   event.preventDefault();
+  window.FrontendUtils.setButtonLoading(claimButton, true, "Claim");
 
   try {
     if (!runtime.contract) {
@@ -52,12 +56,19 @@ async function submitClaim(event) {
     }
 
     const installmentNumber = Number(document.getElementById("claimInstallmentNumber").value);
+    if (!Number.isInteger(installmentNumber) || installmentNumber < 1) {
+      throw new Error("Installment number must be at least 1");
+    }
+
     const tx = await runtime.contract.claimInstallment(installmentNumber);
     const receipt = await tx.wait();
 
     showStudentAlert(`Claim successful. Tx: ${receipt.hash}`, true);
+    claimForm.reset();
   } catch (error) {
     showStudentAlert(error.message || "Claim failed", false);
+  } finally {
+    window.FrontendUtils.setButtonLoading(claimButton, false, "Claim");
   }
 }
 
