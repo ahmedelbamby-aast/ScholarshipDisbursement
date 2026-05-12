@@ -10,6 +10,7 @@ function errorHandler(error, req, res, _next) {
     error instanceof AppError ? error : new AppError(toErrorMessage(error, "Internal server error"), 500);
 
   if (appError.statusCode >= 500) {
+    // Only server-side faults are logged at error level to reduce expected-noise.
     console.error(
       `[api] request_id=${requestId} status=${appError.statusCode} message=${appError.message}`
     );

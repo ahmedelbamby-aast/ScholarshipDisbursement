@@ -3,6 +3,7 @@ import fs from "node:fs";
 import config from "./config.js";
 
 const CONTRACT_ABI = [
+  // Keep ABI minimal to the backend call surface for deterministic runtime behavior.
   "function approveScholarship(address student,uint256 totalAmount,uint256 installments,uint256 claimWindowSeconds)",
   "function releaseInstallment(address student,uint256 installmentNumber)",
   "function fundScholarship() payable",
@@ -13,10 +14,12 @@ const CONTRACT_ABI = [
 function getContract() {
   const contractAddress = getResolvedContractAddress();
 
+  // Null-return keeps API dependency checks centralized in service layer (503 path).
   if (!contractAddress || !config.adminPrivateKey || !ethers.isAddress(contractAddress)) {
     return null;
   }
 
+  // Cache ties client identity to chain + signer + target contract, preventing stale reuse.
   const cacheKey = `${config.rpcUrl}|${config.chainId}|${contractAddress}|${config.adminPrivateKey}`;
   if (runtimeCache.cacheKey === cacheKey && runtimeCache.contract) {
     return runtimeCache.contract;
@@ -37,6 +40,7 @@ function getContract() {
 function getResolvedContractAddress() {
   const metadata = getResolvedContractMetadata();
 
+  // Prefer deployment metadata when available to keep runtime source-of-truth explicit.
   if (metadata?.contractAddress) {
     return String(metadata.contractAddress).trim();
   }
@@ -63,6 +67,7 @@ function getResolvedContractMetadata() {
   }
 
   try {
+    // Corrupt metadata should degrade gracefully to address file/env fallback.
     return JSON.parse(fs.readFileSync(metadataPath, "utf8"));
   } catch (_error) {
     return null;

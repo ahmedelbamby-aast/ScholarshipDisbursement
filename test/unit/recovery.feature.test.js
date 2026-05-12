@@ -19,6 +19,7 @@ describe("Feature: expired installment recovery", function () {
     await contract.connect(provider).fundScholarship({ value: total });
     await contract.connect(admin).releaseInstallment(student.address, 1);
 
+    // Time travel isolates expiry logic without waiting wall-clock time.
     const info = await contract.getInstallmentInfo(student.address, 1);
     await ethers.provider.send("evm_setNextBlockTimestamp", [Number(info.claimDeadline) + 1]);
     await ethers.provider.send("evm_mine", []);
@@ -28,6 +29,7 @@ describe("Feature: expired installment recovery", function () {
       "ExpiredInstallmentRecovered"
     );
 
+    // Recovery should undo release accounting and return funds to shared pool.
     const scholarship = await contract.getScholarship(student.address);
     expect(scholarship.releasedAmount).to.equal(0n);
     expect(scholarship.releasedInstallments).to.equal(0n);

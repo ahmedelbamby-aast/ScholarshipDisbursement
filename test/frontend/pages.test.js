@@ -8,6 +8,7 @@ const __dirname = path.dirname(__filename);
 
 describe("Frontend pages", function () {
   it("landing page links to admin and student dashboards", function () {
+    // Static smoke checks catch accidental regressions in navigation contract.
     const html = fs.readFileSync(path.join(__dirname, "../../frontend/index.html"), "utf8");
     expect(html).to.include("Admin Dashboard");
     expect(html).to.include("Student Dashboard");

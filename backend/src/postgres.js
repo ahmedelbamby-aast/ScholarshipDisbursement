@@ -8,6 +8,7 @@ function getPostgresPool() {
     return null;
   }
 
+  // Single pool avoids connection explosion under concurrent API traffic.
   if (cachedPool) {
     return cachedPool;
   }

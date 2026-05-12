@@ -25,6 +25,7 @@ describe("Feature: claim window", function () {
       "InstallmentClaimed"
     );
 
+    // Explicitly moves chain time beyond deadline to verify closure behavior.
     const { timestamp } = await ethers.provider.getBlock("latest");
     await ethers.provider.send("evm_setNextBlockTimestamp", [Number(timestamp) + 120]);
     await ethers.provider.send("evm_mine", []);

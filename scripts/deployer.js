@@ -14,6 +14,7 @@ const outputMetaPath = process.env.CONTRACT_METADATA_FILE || "/runtime/contract-
 const contractSourcePath = path.resolve(process.cwd(), "contracts/ScholarshipApprovalRelease.sol");
 
 async function main() {
+  // Deployment is intentionally gated on RPC readiness to avoid transient startup races in Docker.
   await waitForRpc(chainRpcUrl, 40, 1500);
 
   if (explicitContractAddress) {
@@ -99,6 +100,7 @@ function writeContractAddress(address) {
 
 function writeContractMetadata(metadata) {
   fs.mkdirSync(path.dirname(outputMetaPath), { recursive: true });
+  // Metadata provides backend/runtime diagnostics without requiring chain calls.
   fs.writeFileSync(
     outputMetaPath,
     JSON.stringify(
@@ -114,6 +116,7 @@ function writeContractMetadata(metadata) {
 }
 
 async function waitForRpc(url, retries, delayMs) {
+  // Bounded retry loop keeps bootstrap deterministic while tolerating short chain warm-up.
   for (let i = 0; i < retries; i += 1) {
     try {
       const provider = new ethers.JsonRpcProvider(url);

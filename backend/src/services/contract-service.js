@@ -5,6 +5,7 @@ import { DependencyUnavailableError } from "../errors.js";
 function getContractOrThrow() {
   const contract = getContract();
   if (!contract) {
+    // Route layer expects dependency failures to map to 503.
     throw new DependencyUnavailableError(CONTRACT_NOT_READY_MESSAGE);
   }
   return contract;
@@ -16,6 +17,7 @@ function withTimeout(promise, timeoutMs, timeoutMessage) {
     timer = setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs);
   });
 
+  // Timeout guards avoid indefinitely hanging API requests on slow chain confirmations.
   return Promise.race([promise, timeoutPromise]).finally(() => clearTimeout(timer));
 }
 

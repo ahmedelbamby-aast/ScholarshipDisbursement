@@ -3,6 +3,7 @@ import { network } from "hardhat";
 
 describe("Feature: audit event log", function () {
   it("emits events for approval, funding, release, and claim", async function () {
+    // Event assertions preserve off-chain observability contract for indexers/backoffice tools.
     const { ethers } = await network.create();
     const [admin, provider, student] = await ethers.getSigners();
     const Factory = await ethers.getContractFactory("ScholarshipApprovalRelease");

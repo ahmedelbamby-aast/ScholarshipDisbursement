@@ -1,6 +1,7 @@
 class AppError extends Error {
   constructor(message, statusCode = 500) {
     super(message);
+    // Name and status are intentionally serializable for centralized error middleware.
     this.name = "AppError";
     this.statusCode = statusCode;
   }

@@ -4,6 +4,7 @@ import { DependencyUnavailableError } from "../errors.js";
 function getPoolOrThrow() {
   const pool = getPostgresPool();
   if (!pool) {
+    // Deterministic dependency error is surfaced as 503 upstream.
     throw new DependencyUnavailableError("PostgreSQL not configured");
   }
   return pool;
@@ -14,6 +15,7 @@ async function insertIfClient(table, payload) {
   const columns = Object.keys(payload);
   const values = Object.values(payload);
   const placeholders = columns.map((_, index) => `$${index + 1}`).join(", ");
+  // Column names come from internal constants only; values remain parameterized.
   const statement = `insert into ${table} (${columns.join(", ")}) values (${placeholders})`;
 
   try {
@@ -46,6 +48,7 @@ function buildAuditHistoryQuery({ table, studentAddress, from, pageSize }) {
   const offsetRef = `$${params.length}`;
 
   const whereClause = filters.length ? `where ${filters.join(" and ")}` : "";
+  // Ordering by created_at matches API contract for "recent activity" views.
   const rowsSql = `
     select *
     from ${table}
@@ -57,6 +60,7 @@ function buildAuditHistoryQuery({ table, studentAddress, from, pageSize }) {
 
   const countParams = params.slice(0, studentAddress ? 1 : 0);
   const countSql = `
+    -- Count mirrors the same filter to keep pagination totals consistent.
     select count(*)::int as total
     from ${table}
     ${whereClause}

@@ -16,6 +16,7 @@ const auditStudentAddress = document.getElementById("auditStudentAddress");
 const auditPageSize = document.getElementById("auditPageSize");
 
 const auditState = {
+  // UI-local cursor; backend remains stateless via query params.
   page: 1,
 };
 
@@ -49,6 +50,7 @@ function renderAuditRows(rows) {
 }
 
 function mergeAuditRows(approvals, releases) {
+  // Merge on client to preserve a single time-sorted activity stream for operators.
   const approvalRows = approvals.map((item) => ({ ...item, type: "approval" }));
   const releaseRows = releases.map((item) => ({ ...item, type: "release" }));
   return [...approvalRows, ...releaseRows].sort(
@@ -85,6 +87,7 @@ async function loadAuditHistory() {
     auditMeta.textContent = `Page ${data.pagination.page}, page size ${data.pagination.pageSize}. Totals: approvals ${data.pagination.approvalsTotal}, releases ${data.pagination.releasesTotal}.`;
 
     prevAuditBtn.disabled = auditState.page <= 1;
+    // Next is derived from larger dataset to avoid false "end reached" when one table is sparse.
     const maxTotal = Math.max(data.pagination.approvalsTotal || 0, data.pagination.releasesTotal || 0);
     const consumed = data.pagination.page * data.pagination.pageSize;
     nextAuditBtn.disabled = consumed >= maxTotal;

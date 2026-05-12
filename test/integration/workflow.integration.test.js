@@ -3,6 +3,7 @@ import { network } from "hardhat";
 
 describe("Integration: scholarship workflow", function () {
   it("handles full workflow from approval to final claim", async function () {
+    // Integration path validates combined state transitions rather than single revert conditions.
     const { ethers } = await network.create();
     const [admin, provider, student] = await ethers.getSigners();
     const Factory = await ethers.getContractFactory("ScholarshipApprovalRelease");

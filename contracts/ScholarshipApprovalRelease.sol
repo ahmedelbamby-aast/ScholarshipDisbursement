@@ -176,6 +176,7 @@ contract ScholarshipApprovalRelease {
         record.claimedInstallments += 1;
         record.claimedAmount += info.amount;
 
+        // Pull-payment uses call to support receiver wallet variations while reverting on failure.
         (bool sent, ) = payable(msg.sender).call{value: info.amount}("");
         require(sent, "Transfer failed");
 
@@ -190,8 +191,10 @@ contract ScholarshipApprovalRelease {
         require(block.timestamp > info.claimDeadline, "Claim window still open");
 
         Scholarship storage record = scholarships[student];
+        // Mark claimed to block any later claim/recovery re-entry on this installment slot.
         info.claimed = true;
         fundedBalance += info.amount;
+        // Recovery intentionally reopens sequence so admin can release a replacement installment.
         record.releasedAmount -= info.amount;
         record.releasedInstallments -= 1;
 
@@ -234,6 +237,7 @@ contract ScholarshipApprovalRelease {
     }
 
     function _isScholarshipActive(Scholarship storage record) private view returns (bool) {
+        // Active means approval exists and lifecycle hasn't reached full claim completion yet.
         return record.approved && record.claimedInstallments != record.installments;
     }
 

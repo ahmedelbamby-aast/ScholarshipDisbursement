@@ -14,6 +14,7 @@ function parsePositiveIntOrDefault(raw, defaultValue) {
 function parseAuditHistoryQuery(query) {
   const page = parsePositiveIntOrDefault(query.page, 1);
   const pageSize = parsePositiveIntOrDefault(query.pageSize, 10);
+  // Cap protects DB/query cost even if clients request very large pages.
   const cappedPageSize = Math.min(pageSize, 50);
   const studentAddress = typeof query.studentAddress === "string" ? query.studentAddress.trim() : "";
 

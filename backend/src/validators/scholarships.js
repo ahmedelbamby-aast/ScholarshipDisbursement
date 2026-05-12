@@ -17,6 +17,7 @@ function parseApprovalPayload(body) {
 
   let parsedAmount = 0n;
   try {
+    // BigInt keeps wei precision intact; number parsing would risk overflow.
     parsedAmount = BigInt(amountWei || 0);
   } catch (_error) {
     throw new ValidationError("Amount must be greater than zero");

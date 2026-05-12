@@ -30,6 +30,7 @@ describe("Feature: controlled fund release", function () {
     expect(afterFirst.releasedInstallments).to.equal(1n);
     expect(afterFirst.releasedAmount).to.equal(ethers.parseEther("1"));
 
+    // Second release validates strict sequential progression state.
     await expect(contract.connect(admin).releaseInstallment(student.address, 2))
       .to.emit(contract, "InstallmentReleased")
       .withArgs(student.address, 2, ethers.parseEther("1"), anyValue);
@@ -69,6 +70,7 @@ describe("Feature: controlled fund release", function () {
     await contract.connect(admin).releaseInstallment(student.address, 2);
     await contract.connect(admin).releaseInstallment(student.address, 3);
 
+    // Integer division remainder must be carried by final installment.
     const i1 = await contract.getInstallmentInfo(student.address, 1);
     const i2 = await contract.getInstallmentInfo(student.address, 2);
     const i3 = await contract.getInstallmentInfo(student.address, 3);

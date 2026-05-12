@@ -1,6 +1,7 @@
 import { network } from "hardhat";
 
 async function main() {
+  // Isolated ephemeral Hardhat network keeps deploy script side-effect free for local runs.
   const { ethers } = await network.create();
   const [deployer] = await ethers.getSigners();
   console.log("Deploying with:", deployer.address);

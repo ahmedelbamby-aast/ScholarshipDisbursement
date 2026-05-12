@@ -18,6 +18,7 @@ scholarshipRouter.post("/api/scholarships/approve", async (req, res, next) => {
     const result = await approveScholarship(payload, config.txTimeoutMs);
     return res.status(201).json({ ok: true, txHash: result.txHash });
   } catch (error) {
+    // Normalize all non-AppError throws to keep response schema deterministic.
     return next(normalizeRouteError(error, "Approval failed"));
   }
 });
@@ -55,6 +56,7 @@ function normalizeRouteError(error, fallbackMessage) {
   if (error?.statusCode) {
     return error;
   }
+  // Unknown failures are treated as 500 with safe fallback message.
   return new AppError(error?.message || fallbackMessage, 500);
 }
 

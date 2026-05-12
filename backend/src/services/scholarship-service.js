@@ -8,6 +8,7 @@ import { getAuditHistory, saveApprovalAudit, saveReleaseAudit } from "../reposit
 async function approveScholarship(payload, txTimeoutMs) {
   const { txHash } = await approveOnChain(payload, txTimeoutMs);
 
+  // Audit write follows confirmed tx so database never records speculative operations.
   await saveApprovalAudit({
     student_address: payload.studentAddress,
     amount_wei: payload.parsedAmount.toString(),
@@ -22,6 +23,7 @@ async function approveScholarship(payload, txTimeoutMs) {
 async function releaseInstallment(payload, txTimeoutMs) {
   const { txHash } = await releaseOnChain(payload, txTimeoutMs);
 
+  // Release audit mirrors on-chain release semantics for operator traceability.
   await saveReleaseAudit({
     student_address: payload.studentAddress,
     installment_number: payload.installmentNumber,

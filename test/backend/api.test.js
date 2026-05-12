@@ -23,6 +23,7 @@ describe("Backend API", function () {
   });
 
   it("returns deterministic error for audit history when DB is not configured", async function () {
+    // Expected dependency error ensures clients can distinguish infra vs input failures.
     const response = await request(app).get("/api/audits/history?page=1&pageSize=5");
     expect(response.status).to.equal(503);
     expect(response.body.error).to.equal("PostgreSQL not configured");

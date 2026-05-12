@@ -3,6 +3,7 @@ import { network } from "hardhat";
 
 describe("System-wide: controls and edge cases", function () {
   it("enforces access control, balances, and claim windows", async function () {
+    // System test intentionally mixes positive and negative paths to mimic operator mistakes.
     const { ethers } = await network.create();
     const [admin, provider, student, outsider] = await ethers.getSigners();
     const Factory = await ethers.getContractFactory("ScholarshipApprovalRelease");

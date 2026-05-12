@@ -33,6 +33,7 @@ describe("Feature: scholarship approval", function () {
     const approved = await contract.isApproved(student.address);
     expect(approved).to.equal(true);
 
+    // Roster must include approved student exactly once across lifecycle updates.
     const recipients = await contract.getApprovedStudents();
     expect(recipients).to.include(student.address);
 
@@ -67,6 +68,7 @@ describe("Feature: scholarship approval", function () {
       contract.connect(admin).approveScholarship(student.address, total, 3, 3600)
     ).to.be.revertedWith("Existing active scholarship");
 
+    // Completion requires full release+claim cycle before re-approval becomes legal.
     await contract.connect(provider).fundScholarship({ value: total });
     await contract.connect(admin).releaseInstallment(student.address, 1);
     await contract.connect(student).claimInstallment(1);
@@ -75,8 +77,6 @@ describe("Feature: scholarship approval", function () {
     await contract.connect(admin).releaseInstallment(student.address, 3);
     await contract.connect(student).claimInstallment(3);
 
-    await expect(
-      contract.connect(admin).approveScholarship(student.address, total, 1, 3600)
-    ).to.not.be.reverted;
+    await contract.connect(admin).approveScholarship(student.address, total, 1, 3600);
   });
 });
