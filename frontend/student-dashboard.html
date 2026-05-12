@@ -40,56 +40,6 @@
     <div id="studentAlert" class="alert d-none" role="alert"></div>
   </main>
 
-  <script>
-    const CONTRACT_ADDRESS = window.CONTRACT_ADDRESS || "";
-    const ABI = [
-      "function claimInstallment(uint256 installmentNumber)",
-      "function getScholarship(address student) view returns (tuple(bool approved,uint256 totalAmount,uint256 releasedAmount,uint256 claimedAmount,uint256 installments,uint256 releasedInstallments,uint256 claimedInstallments,uint256 claimWindowSeconds))",
-    ];
-
-    let signer;
-    let contract;
-
-    function showStudentAlert(message, success) {
-      const alert = document.getElementById("studentAlert");
-      alert.className = `alert ${success ? "alert-success" : "alert-danger"}`;
-      alert.textContent = message;
-    }
-
-    document.getElementById("connectBtn").addEventListener("click", async () => {
-      try {
-        if (!window.ethereum) {
-          throw new Error("MetaMask is required");
-        }
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        await provider.send("eth_requestAccounts", []);
-        signer = await provider.getSigner();
-        const address = await signer.getAddress();
-        document.getElementById("walletInfo").textContent = `Connected: ${address}`;
-        if (!CONTRACT_ADDRESS) {
-          showStudentAlert("Contract address is missing. Set window.CONTRACT_ADDRESS.", false);
-          return;
-        }
-        contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
-      } catch (error) {
-        showStudentAlert(error.message, false);
-      }
-    });
-
-    document.getElementById("claimForm").addEventListener("submit", async (event) => {
-      event.preventDefault();
-      try {
-        if (!contract) {
-          throw new Error("Connect wallet first");
-        }
-        const installmentNumber = Number(document.getElementById("claimInstallmentNumber").value);
-        const tx = await contract.claimInstallment(installmentNumber);
-        const receipt = await tx.wait();
-        showStudentAlert(`Claim successful. Tx: ${receipt.hash}`, true);
-      } catch (error) {
-        showStudentAlert(error.message || "Claim failed", false);
-      }
-    });
-  </script>
+  <script src="js/student-dashboard.js"></script>
 </body>
 </html>

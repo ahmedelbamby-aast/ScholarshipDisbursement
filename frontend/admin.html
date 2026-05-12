@@ -68,62 +68,6 @@
     </div>
   </main>
 
-  <script>
-    const API_BASE = window.location.origin.includes("localhost") ? "http://localhost:4000" : "";
-
-    function showAlert(message, isSuccess) {
-      const box = document.getElementById("alertBox");
-      box.className = `alert ${isSuccess ? "alert-success" : "alert-danger"}`;
-      box.textContent = message;
-    }
-
-    document.getElementById("approveForm").addEventListener("submit", async (event) => {
-      event.preventDefault();
-      try {
-        const payload = {
-          studentAddress: document.getElementById("studentAddress").value.trim(),
-          amountWei: document.getElementById("amountWei").value.trim(),
-          installments: Number(document.getElementById("installments").value),
-          claimWindowSeconds: Number(document.getElementById("claimWindowSeconds").value),
-        };
-
-        const response = await fetch(`${API_BASE}/api/scholarships/approve`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.error || "Approval failed");
-        }
-        showAlert(`Approval submitted. Tx: ${data.txHash}`, true);
-      } catch (error) {
-        showAlert(error.message, false);
-      }
-    });
-
-    document.getElementById("releaseForm").addEventListener("submit", async (event) => {
-      event.preventDefault();
-      try {
-        const payload = {
-          studentAddress: document.getElementById("releaseStudentAddress").value.trim(),
-          installmentNumber: Number(document.getElementById("installmentNumber").value),
-        };
-
-        const response = await fetch(`${API_BASE}/api/scholarships/release`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.error || "Release failed");
-        }
-        showAlert(`Release submitted. Tx: ${data.txHash}`, true);
-      } catch (error) {
-        showAlert(error.message, false);
-      }
-    });
-  </script>
+  <script src="js/admin-dashboard.js"></script>
 </body>
 </html>

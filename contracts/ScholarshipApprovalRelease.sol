@@ -1,7 +1,34 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+// -----------------------------------------------------------------------------
+// ScholarshipApprovalRelease Contract Structure
+// -----------------------------------------------------------------------------
+// 1. Data model:
+//    - Scholarship tracks lifecycle totals and installment counters per student.
+//    - Installment tracks per-release claim window and claim status.
+//
+// 2. Access model:
+//    - owner is the admin account configured at deployment.
+//    - onlyOwner protects approval/release/recovery operations.
+//
+// 3. Write operations:
+//    - approveScholarship initializes a student scholarship plan.
+//    - fundScholarship increases the available release pool.
+//    - releaseInstallment releases one installment in strict sequence.
+//    - claimInstallment lets student pull released funds within claim window.
+//    - recoverExpiredInstallment reclaims expired unclaimed releases.
+//
+// 4. Read operations:
+//    - getScholarship / getInstallmentInfo expose current state.
+//    - getApprovedStudents / isApproved support roster queries.
+//
+// 5. Audit trail:
+//    - Events are emitted for approval, funding, release, claim, and recovery.
+// -----------------------------------------------------------------------------
+
 contract ScholarshipApprovalRelease {
+    // Scholarship aggregates the full lifecycle state for one student.
     struct Scholarship {
         bool approved;
         uint256 totalAmount;
@@ -13,6 +40,7 @@ contract ScholarshipApprovalRelease {
         uint256 claimWindowSeconds;
     }
 
+    // Installment stores one release unit and its claim deadline.
     struct Installment {
         bool released;
         bool claimed;
@@ -41,17 +69,24 @@ contract ScholarshipApprovalRelease {
         uint256 amount
     );
 
+    // The configured administrator for privileged operations.
     address public owner;
+    // Funds available for future installment releases.
     uint256 public fundedBalance;
 
+    // Student-level scholarship state.
     mapping(address => Scholarship) private scholarships;
+    // Student -> installment number -> installment state.
     mapping(address => mapping(uint256 => Installment)) private installmentRecords;
 
+    // Roster of all students ever approved at least once.
     address[] private approvedStudents;
+    // Indexing guard to avoid duplicate roster entries.
     mapping(address => bool) private hasBeenListed;
 
     error OwnableUnauthorizedAccount(address account);
 
+    // Privileged boundary for admin-only state changes.
     modifier onlyOwner() {
         if (msg.sender != owner) {
             revert OwnableUnauthorizedAccount(msg.sender);
@@ -59,11 +94,13 @@ contract ScholarshipApprovalRelease {
         _;
     }
 
+    // Admin is fixed at deployment and cannot be zero address.
     constructor(address admin) {
         require(admin != address(0), "Admin cannot be zero address");
         owner = admin;
     }
 
+    // Approve or re-approve a student after prior scholarship completion.
     function approveScholarship(
         address student,
         uint256 totalAmount,
@@ -100,12 +137,14 @@ contract ScholarshipApprovalRelease {
         emit ScholarshipApproved(student, totalAmount, installments, claimWindowSeconds);
     }
 
+    // Any account can fund the shared release pool.
     function fundScholarship() external payable {
         require(msg.value > 0, "Funding amount must be greater than zero");
         fundedBalance += msg.value;
         emit ScholarshipFunded(msg.sender, msg.value, fundedBalance);
     }
 
+    // Release next installment in strict order, reserving funds from pool.
     function releaseInstallment(address student, uint256 installmentNumber) external onlyOwner {
         Scholarship storage record = scholarships[student];
 
@@ -135,6 +174,7 @@ contract ScholarshipApprovalRelease {
         emit InstallmentReleased(student, installmentNumber, releaseAmount, deadline);
     }
 
+    // Student pulls released funds before claim deadline.
     function claimInstallment(uint256 installmentNumber) external {
         Scholarship storage record = scholarships[msg.sender];
         require(record.approved, "Student is not approved");
@@ -154,6 +194,7 @@ contract ScholarshipApprovalRelease {
         emit InstallmentClaimed(msg.sender, installmentNumber, info.amount);
     }
 
+    // Admin can recover expired unreclaimed installment and return it to pool.
     function recoverExpiredInstallment(address student, uint256 installmentNumber) external onlyOwner {
         Installment storage info = installmentRecords[student][installmentNumber];
         require(info.released, "Installment not released");
@@ -169,10 +210,12 @@ contract ScholarshipApprovalRelease {
         emit ExpiredInstallmentRecovered(student, installmentNumber, info.amount);
     }
 
+    // Read full scholarship state for one student.
     function getScholarship(address student) external view returns (Scholarship memory) {
         return scholarships[student];
     }
 
+    // Read one installment state for one student.
     function getInstallmentInfo(
         address student,
         uint256 installmentNumber
@@ -180,14 +223,17 @@ contract ScholarshipApprovalRelease {
         return installmentRecords[student][installmentNumber];
     }
 
+    // Read roster of approved students.
     function getApprovedStudents() external view returns (address[] memory) {
         return approvedStudents;
     }
 
+    // Quick approval status helper.
     function isApproved(address student) external view returns (bool) {
         return scholarships[student].approved;
     }
 
+    // Last installment receives remainder to preserve exact total amount.
     function _calculateInstallmentAmount(
         Scholarship memory record,
         uint256 installmentNumber
