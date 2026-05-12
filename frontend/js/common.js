@@ -23,6 +23,9 @@ window.FrontendUtils = (() => {
 
     alertElement.className = `alert status-alert ${isSuccess ? "alert-success" : "alert-danger"}`;
     alertElement.textContent = message;
+    requestAnimationFrame(() => {
+      alertElement.classList.add("is-visible");
+    });
   }
 
   function getApiBase() {
