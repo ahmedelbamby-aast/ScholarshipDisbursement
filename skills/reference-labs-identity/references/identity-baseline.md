@@ -58,3 +58,12 @@ Observed in `reference Labs/labs/lab{1..4}/frontend/*`:
 - Contract events remain consumable as audit trail.
 - Frontend state updates remain deterministic after async operations.
 - API remains explicit about success/error without hidden implicit behavior.
+
+## Sequence Diagram
+```mermaid
+sequenceDiagram
+  participant Reader
+  participant Document
+  Reader->>Document: Open and read
+  Document-->>Reader: Render documented content
+```

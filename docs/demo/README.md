@@ -33,3 +33,12 @@ This folder stores evidence artifacts required by the submission grading package
 2. Each screenshot shows timestamp/tx hash where relevant.
 3. Filenames follow the naming pattern.
 4. Cross-check tx hashes against audit rows in `docs/demo/evidence-log.md`.
+
+## Sequence Diagram
+```mermaid
+sequenceDiagram
+  participant Reader
+  participant Document
+  Reader->>Document: Open and read
+  Document-->>Reader: Render documented content
+```

@@ -258,47 +258,53 @@ async function loadApprovedStudents() {
     } catch (_error) {
       persisted = {};
     }
-    const response = await fetch(`${runtime.apiBase}/api/users/students`, { headers: apiHeaders() });
+    const response = await fetch(`${runtime.apiBase}/api/users`, { headers: apiHeaders() });
     const data = await window.FrontendUtils.readJson(response);
     if (!response.ok) throw new Error(data.error || "Failed to load approved students");
-    const students = (data.students || []).filter((item) => item.is_verified && item.wallet_address);
+    const users = data.users || [];
+    if (!users.length) {
+      studentRows.innerHTML = '<tr><td colspan="7" class="text-secondary">No users registered.</td></tr>';
+    }
+    const students = users.filter((item) => item.role === "student" && item.is_verified && item.wallet_address);
     if (!students.length) {
       releaseStudentAddress.innerHTML = '<option value="">No students registered</option>';
       auditStudentAddress.innerHTML = '<option value="">No students registered</option>';
-      studentRows.innerHTML = '<tr><td colspan="6" class="text-secondary">No students registered.</td></tr>';
-      return;
+    } else {
+      releaseStudentAddress.innerHTML = ['<option value="">Select verified student</option>', ...students.map((s) => `<option value="${s.wallet_address}">${s.full_name} (${s.wallet_address})</option>`)].join("");
+      auditStudentAddress.innerHTML = ['<option value="">All students</option>', ...students.map((s) => `<option value="${s.wallet_address}">${s.full_name}</option>`)].join("");
+      if (persisted.release?.studentAddress) {
+        releaseStudentAddress.value = persisted.release.studentAddress;
+      }
+      if (persisted.audit?.studentAddress) {
+        auditStudentAddress.value = persisted.audit.studentAddress;
+      }
     }
-    releaseStudentAddress.innerHTML = ['<option value="">Select verified student</option>', ...students.map((s) => `<option value="${s.wallet_address}">${s.full_name} (${s.wallet_address})</option>`)].join("");
-    auditStudentAddress.innerHTML = ['<option value="">All students</option>', ...students.map((s) => `<option value="${s.wallet_address}">${s.full_name}</option>`)].join("");
-    if (persisted.release?.studentAddress) {
-      releaseStudentAddress.value = persisted.release.studentAddress;
-    }
-    if (persisted.audit?.studentAddress) {
-      auditStudentAddress.value = persisted.audit.studentAddress;
-    }
-    studentRows.innerHTML = students.map((s) => `<tr>
+    if (users.length) {
+      studentRows.innerHTML = users.map((s) => `<tr>
       <td>${s.id}</td>
       <td>${s.full_name}</td>
       <td>${s.email}</td>
+      <td>${s.role}</td>
       <td><code>${s.wallet_address || "-"}</code></td>
       <td>${s.is_verified ? "yes" : "no"}</td>
-      <td>${s.is_verified ? '<span class="text-secondary">Verified</span>' : `<button class="btn btn-sm btn-outline-primary" data-verify-student="${s.id}">Verify</button>`}</td>
+      <td>${s.is_verified ? '<span class="text-secondary">Verified</span>' : `<button class="btn btn-sm btn-outline-primary" data-verify-user="${s.id}">Verify</button>`}</td>
     </tr>`).join("");
+    }
   } catch (error) { showAlert(error.message || "Failed to load approved students", false); }
 }
 
-async function verifyStudent(studentId) {
+async function verifyUser(userId) {
   try {
-    const response = await fetch(`${runtime.apiBase}/api/users/students/${studentId}/verify`, {
+    const response = await fetch(`${runtime.apiBase}/api/users/${userId}/verify`, {
       method: "PATCH",
       headers: apiHeaders(),
     });
     const data = await window.FrontendUtils.readJson(response);
-    if (!response.ok) throw new Error(data.error || "Student verification failed");
-    showAlert(`Student #${studentId} verified`, true);
+    if (!response.ok) throw new Error(data.error || "User verification failed");
+    showAlert(`User #${userId} verified`, true);
     await loadApprovedStudents();
   } catch (error) {
-    showAlert(error.message || "Student verification failed", false);
+    showAlert(error.message || "User verification failed", false);
   }
 }
 
@@ -401,8 +407,8 @@ auditRows.addEventListener("click", (event) => {
   if (button) saveAuditEdit(button);
 });
 studentRows.addEventListener("click", (event) => {
-  const button = event.target.closest("button[data-verify-student]");
-  if (button) verifyStudent(button.dataset.verifyStudent);
+  const button = event.target.closest("button[data-verify-user]");
+  if (button) verifyUser(button.dataset.verifyUser);
 });
 
 setRoleUiState();

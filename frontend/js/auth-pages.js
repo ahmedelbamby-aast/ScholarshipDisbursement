@@ -2,6 +2,8 @@ const apiBase = window.FrontendUtils.getApiBase();
 const loginForm = document.getElementById("loginForm");
 const registerForm = document.getElementById("registerForm");
 const authAlert = document.getElementById("authAlert");
+const generateWalletBtn = document.getElementById("generateWalletBtn");
+const walletAddressInput = document.getElementById("walletAddress");
 
 function show(message, success) {
   window.FrontendUtils.showAlert(authAlert, message, success);
@@ -39,12 +41,20 @@ async function handleLogin(event) {
 async function handleRegister(event) {
   event.preventDefault();
   const role = registerForm.dataset.role;
+  const walletAddress = document.getElementById("walletAddress")?.value.trim() || "";
+  if (role === "student") {
+    const isAddress = /^0x[a-fA-F0-9]{40}$/.test(walletAddress);
+    if (!isAddress) {
+      show("Wallet address format is invalid", false);
+      return;
+    }
+  }
   const payload = {
     fullName: document.getElementById("fullName").value.trim(),
     email: document.getElementById("email").value.trim(),
     password: document.getElementById("password").value,
     role,
-    walletAddress: document.getElementById("walletAddress")?.value.trim() || "",
+    walletAddress,
   };
   const response = await fetch(`${apiBase}/api/auth/register`, {
     method: "POST",
@@ -56,11 +66,7 @@ async function handleRegister(event) {
     show(data.error || "Registration failed", false);
     return;
   }
-  if (role === "student") {
-    show("Student registered. Wait for admin verification before login.", true);
-    return;
-  }
-  show("Registration successful. You can now login.", true);
+  show("Registration successful. Wait for admin verification before login.", true);
 }
 
 if (loginForm) {
@@ -69,3 +75,45 @@ if (loginForm) {
 if (registerForm) {
   registerForm.addEventListener("submit", handleRegister);
 }
+if (generateWalletBtn && walletAddressInput) {
+  generateWalletBtn.addEventListener("click", async () => {
+    try {
+      if (window.ethereum && window.ethers?.BrowserProvider) {
+        const provider = new window.ethers.BrowserProvider(window.ethereum);
+        await provider.send("eth_requestAccounts", []);
+        const signer = await provider.getSigner();
+        const address = await signer.getAddress();
+        walletAddressInput.value = address;
+        show("Wallet address loaded from MetaMask", true);
+        return;
+      }
+      if (!window.ethers?.Wallet) {
+        show("Wallet generator is unavailable on this page", false);
+        return;
+      }
+      const wallet = window.ethers.Wallet.createRandom();
+      walletAddressInput.value = wallet.address;
+      show("Wallet address generated locally", true);
+    } catch (error) {
+      show(error.message || "Failed to generate wallet address", false);
+    }
+  });
+}
+
+async function preloadInitialAdminWallet() {
+  if (!registerForm || registerForm.dataset.role !== "admin" || !walletAddressInput) {
+    return;
+  }
+  try {
+    const response = await fetch(`${apiBase}/api/runtime/admin-wallet`);
+    const data = await window.FrontendUtils.readJson(response);
+    if (!response.ok || !data.address) {
+      return;
+    }
+    walletAddressInput.value = data.address;
+  } catch (_error) {
+    // Optional preload; silently ignore failures.
+  }
+}
+
+preloadInitialAdminWallet();

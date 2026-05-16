@@ -198,3 +198,12 @@ Recommended final verification (full system):
 
 ## Conclusion
 The system now follows the `reference Labs` engineering identity more closely in backend structure, frontend organization, and contract readability, while preserving the original functional behavior and keeping the old `README.md` untouched for direct comparison.
+
+## Sequence Diagram
+```mermaid
+sequenceDiagram
+  participant Reader
+  participant Document
+  Reader->>Document: Open and read
+  Document-->>Reader: Render documented content
+```

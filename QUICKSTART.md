@@ -165,7 +165,7 @@ Optional check:
 
 ```bash
 curl http://localhost:4000/api/health
-curl http://localhost:4000/api/scholarships/approved
+curl http://localhost:4000/api/runtime/network
 ```
 
 Stop:
@@ -176,10 +176,14 @@ docker compose down
 
 ## 7) API smoke examples
 
+Protected API endpoints require authentication/session and role.
+For legacy local testing, the backend currently accepts `x-user-role` header path.
+
 Approve scholarship:
 
 ```bash
 curl -X POST http://localhost:4000/api/scholarships/approve \
+  -H "x-user-role: admin" \
   -H "Content-Type: application/json" \
   -d '{"studentAddress":"0x0000000000000000000000000000000000000001","amountWei":"1000000000000000000","installments":2,"claimWindowSeconds":86400}'
 ```
@@ -188,6 +192,7 @@ Release installment:
 
 ```bash
 curl -X POST http://localhost:4000/api/scholarships/release \
+  -H "x-user-role: admin" \
   -H "Content-Type: application/json" \
   -d '{"studentAddress":"0x0000000000000000000000000000000000000001","installmentNumber":1}'
 ```
@@ -195,7 +200,7 @@ curl -X POST http://localhost:4000/api/scholarships/release \
 List approved students:
 
 ```bash
-curl http://localhost:4000/api/scholarships/approved
+curl -H "x-user-role: auditor" http://localhost:4000/api/scholarships/approved
 ```
 
 ## 8) Test matrix

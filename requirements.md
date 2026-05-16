@@ -104,3 +104,12 @@ flowchart LR
   S7[Demo Screenshots/Video] --> D
   S8[Limitations & Future Improvements] --> D
 ```
+
+## Sequence Diagram
+```mermaid
+sequenceDiagram
+  participant Reader
+  participant Document
+  Reader->>Document: Open and read
+  Document-->>Reader: Render documented content
+```

@@ -187,3 +187,12 @@ flowchart TD
 6. Final demo evidence pack + polished narrative documentation
 
 If all above is implemented with stable tests and clear documentation, the project moves from “complete” to **A+ caliber** against the grading sheet.
+
+## Sequence Diagram
+```mermaid
+sequenceDiagram
+  participant Reader
+  participant Document
+  Reader->>Document: Open and read
+  Document-->>Reader: Render documented content
+```

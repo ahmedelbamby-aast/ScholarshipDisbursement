@@ -6,7 +6,9 @@ import { ROLES, requireRole } from "../middleware/role-auth.js";
 import {
   loginUser,
   registerUser,
+  listAllUsers,
   listStudentUsers,
+  approveUser,
   approveStudentUser,
   issueWalletNonce,
   loginWithWallet,
@@ -72,6 +74,15 @@ authRouter.get("/api/users/students", requireSession, requireRole([ROLES.ADMIN, 
   }
 });
 
+authRouter.get("/api/users", requireSession, requireRole([ROLES.ADMIN, ROLES.AUDITOR]), async (_req, res, next) => {
+  try {
+    const users = await listAllUsers();
+    return res.status(200).json({ ok: true, users });
+  } catch (error) {
+    return next(normalizeError(error, "Users read failed"));
+  }
+});
+
 authRouter.patch(
   "/api/users/students/:id/verify",
   requireSession,
@@ -87,6 +98,21 @@ authRouter.patch(
   }
 );
 
+authRouter.patch(
+  "/api/users/:id/verify",
+  requireSession,
+  requireRole([ROLES.ADMIN]),
+  async (req, res, next) => {
+    try {
+      const id = parseStudentId(req.params.id);
+      const updated = await approveUser(id);
+      return res.status(200).json({ ok: true, user: updated });
+    } catch (error) {
+      return next(normalizeError(error, "User verification failed"));
+    }
+  }
+);
+
 authRouter.get("/api/runtime/network", async (_req, res) => {
   return res.status(200).json({
     ok: true,
@@ -95,6 +121,15 @@ authRouter.get("/api/runtime/network", async (_req, res) => {
     contractAddress: config.contractAddress || "",
     rpcUrl: config.rpcUrl,
   });
+});
+
+authRouter.get("/api/runtime/admin-wallet", async (_req, res, next) => {
+  try {
+    const wallet = new ethers.Wallet(config.adminPrivateKey);
+    return res.status(200).json({ ok: true, address: wallet.address });
+  } catch (error) {
+    return next(normalizeError(error, "Admin wallet read failed"));
+  }
 });
 
 function normalizeError(error, fallbackMessage) {

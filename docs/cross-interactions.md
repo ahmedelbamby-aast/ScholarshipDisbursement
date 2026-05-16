@@ -1,78 +1,87 @@
-# Cross Interactions Documentation
+# Cross-System Interactions (Verified)
 
-## Context
-This doc maps interactions across frontend, backend, blockchain, and database boundaries.
+## Overview
+This document maps implemented request/data interactions across frontend, backend, blockchain, and database.
 
-## Scope
-- Admin interaction chain
-- Student interaction chain
-- Audit data flow
-- Docker runtime dependencies
+## Responsibilities
+- Frontend drives API and wallet interactions.
+- Backend enforces auth, orchestrates chain tx for admin flows, and persists audit/auth data.
+- Contract enforces on-chain scholarship rules.
+- PostgreSQL stores off-chain audit and auth/session state.
 
-## Architecture / Flow
+## Runtime Interaction Diagram
 ```mermaid
 flowchart LR
-  ADM[Admin UI] -->|POST /approve| API[Backend]
-  ADM -->|POST /release| API
-  ADM -->|GET /audits/history| API
-  API -->|signed tx approve/release| SC[Contract]
-  STU[Student UI] -->|wallet claim tx| SC
-  API -->|audit writes| DB[(PostgreSQL)]
-  DEP[Deployer] --> RT[(runtime files)]
-  RT --> API
-  CH[Chain RPC] --> SC
+  AdminUI[admin-dashboard.js] -->|HTTP| Backend[Express API]
+  AuthPages[auth-pages.js] -->|HTTP| Backend
+  StudentUI[student-dashboard.js] -->|HTTP auth + runtime| Backend
+  StudentUI -->|MetaMask signer tx| Contract[ScholarshipApprovalRelease]
+  Backend -->|ethers Contract calls| Contract
+  Backend -->|SQL| Postgres[(PostgreSQL)]
 ```
 
-- Frontend has two control planes: API-driven admin and wallet-driven student.
-- Backend bridges off-chain intent to on-chain admin transactions.
-- DB stores operational audit, not source-of-truth balances.
+### Diagram Explanation
+- Admin approval/release flows are backend-mediated and write audits.
+- Student claim bypasses backend transaction submission and executes wallet->contract.
+- Backend still participates in student authentication via nonce/signature endpoints.
 
+## Docker Profile Interaction Diagram
 ```mermaid
 flowchart TD
-  subgraph DockerCompose
-    PG[postgres]
-    CH[chain]
-    DP[deployer]
-    BE[backend]
-    FE[frontend]
-    RV[(runtime_data volume)]
+  subgraph hardhat_profile
+    Chain[chain]
+    Deployer[deployer]
   end
 
-  CH --> DP
-  DP --> RV
-  RV --> BE
-  PG --> BE
-  BE --> FE
+  Backend[backend] --> Postgres[postgres]
+  Frontend[frontend] --> Backend
+  Deployer --> Chain
+  Deployer --> Runtime[(runtime_data)]
+  Backend --> Runtime
 ```
 
-- `backend` depends on healthy `postgres` and `chain`, plus successful `deployer`.
-- Runtime volume handoff is required for contract address/metadata resolution.
+### Diagram Explanation
+- `chain` and `deployer` are profile-scoped to `hardhat` only.
+- In sepolia profile, backend uses external RPC configured by env and no local chain/deployer service starts.
 
-## Components / Interfaces
-- Frontend -> Backend:
-  - JSON HTTP API calls for admin/audit.
-- Backend -> Contract:
-  - ethers signer calls with admin private key.
-- Student -> Contract:
-  - wallet signer calls direct from browser.
-- Backend -> DB:
-  - insert/query approvals/releases audit tables.
+## Internal Interactions
+- Backend route -> service -> repository/contract adapter.
+- Export service merges telemetry and DB audit rows.
 
-## Failure Modes and Recovery
-- Backend down:
-  - admin operations unavailable; student direct claim path still chain-dependent.
-- DB down:
-  - contract operations may still complete; audit endpoints fail.
-- Runtime file absent:
-  - backend returns contract-not-ready `503`.
+## External Dependencies
+- MetaMask provider in browser.
+- EVM RPC endpoint (local chain or configured Sepolia RPC).
 
-## Validation Checklist
-1. Bring stack up with docker compose
-2. Verify all service healthchecks
-3. Run one admin approve + release + student claim
-4. Verify audit rows are queryable
-5. Simulate DB outage and confirm deterministic API failure
+## Failure/Error Flow
+- DB unavailable -> backend dependency errors for audit/auth reads/writes.
+- RPC/contract unavailable -> scholarship operations and telemetry fail.
+- Missing/invalid session -> protected routes reject requests.
 
-## Open Questions
-- Should student claims also trigger backend webhook logging?
-- Should deploy/runtime files be versioned with startup checksum validation?
+## Security Considerations
+- Protected APIs require session and role checks.
+- Admin-only edit/export/verify paths.
+
+## Scalability Considerations
+- Pagination on audit history.
+- Telemetry lookback limits.
+
+## Performance Considerations
+- Parallel DB queries for audit table reads.
+- Cached contract client instance in adapter.
+
+## Code References
+- `frontend/js/admin-dashboard.js`
+- `frontend/js/student-dashboard.js`
+- `backend/src/routes/*.js`
+- `backend/src/services/*.js`
+- `backend/src/repositories/*.js`
+- `docker-compose.yml`
+
+## Sequence Diagram
+```mermaid
+sequenceDiagram
+  participant Reader
+  participant Document
+  Reader->>Document: Open and read
+  Document-->>Reader: Render documented content
+```

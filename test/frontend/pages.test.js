@@ -19,4 +19,15 @@ describe("Frontend pages", function () {
     expect(html).to.include("Approve Scholarship");
     expect(html).to.include("Release Installment");
   });
+
+  it("student register page includes wallet generator button", function () {
+    const html = fs.readFileSync(path.join(__dirname, "../../frontend/student-register.html"), "utf8");
+    expect(html).to.include("Student Wallet Generator");
+    expect(html).to.include("id=\"walletAddress\"");
+  });
+
+  it("auditor register page exists", function () {
+    const html = fs.readFileSync(path.join(__dirname, "../../frontend/auditor-register.html"), "utf8");
+    expect(html).to.include("Auditor Register");
+  });
 });

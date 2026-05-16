@@ -23,3 +23,12 @@ Open:
 
 - Frontend: `http://localhost:8082`
 - API health: `http://localhost:3002/api/health`
+
+## Sequence Diagram
+```mermaid
+sequenceDiagram
+  participant Reader
+  participant Document
+  Reader->>Document: Open and read
+  Document-->>Reader: Render documented content
+```

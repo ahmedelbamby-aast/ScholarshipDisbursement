@@ -52,12 +52,34 @@ async function findStudentByWallet(walletAddress) {
   return result.rows[0] || null;
 }
 
+async function findUserByWallet(walletAddress) {
+  const pool = getPoolOrThrow();
+  const sql = `
+    select * from app_users
+    where lower(wallet_address) = lower($1)
+    limit 1
+  `;
+  const result = await pool.query(sql, [walletAddress]);
+  return result.rows[0] || null;
+}
+
 async function listStudents() {
   const pool = getPoolOrThrow();
   const sql = `
     select id, full_name, email, wallet_address, is_verified, verified_at
     from app_users
     where role = 'student'
+    order by created_at desc
+  `;
+  const result = await pool.query(sql);
+  return result.rows || [];
+}
+
+async function listUsers() {
+  const pool = getPoolOrThrow();
+  const sql = `
+    select id, full_name, email, role, wallet_address, is_verified, verified_at, created_at
+    from app_users
     order by created_at desc
   `;
   const result = await pool.query(sql);
@@ -71,6 +93,18 @@ async function verifyStudent(id) {
     set is_verified = true, verified_at = now()
     where id = $1 and role = 'student'
     returning id, full_name, email, role, wallet_address, is_verified
+  `;
+  const result = await pool.query(sql, [id]);
+  return result.rows[0] || null;
+}
+
+async function verifyUser(id) {
+  const pool = getPoolOrThrow();
+  const sql = `
+    update app_users
+    set is_verified = true, verified_at = now()
+    where id = $1
+    returning id, full_name, email, role, wallet_address, is_verified, verified_at
   `;
   const result = await pool.query(sql, [id]);
   return result.rows[0] || null;
@@ -132,8 +166,11 @@ export {
   findUserByEmail,
   findUserById,
   findStudentByWallet,
+  findUserByWallet,
   listStudents,
+  listUsers,
   verifyStudent,
+  verifyUser,
   createSession,
   findSession,
   saveWalletNonce,

@@ -47,3 +47,12 @@ flowchart TD
 ## Open Questions
 - Should ownership migrate to multisig for production safety?
 - Should a dedicated indexer be introduced for complete chain audit coverage?
+
+## Sequence Diagram
+```mermaid
+sequenceDiagram
+  participant Reader
+  participant Document
+  Reader->>Document: Open and read
+  Document-->>Reader: Render documented content
+```

@@ -15,3 +15,12 @@ Each lab should reuse the same structure:
 - your reproduction
 - one required modification
 - short reflection
+
+## Sequence Diagram
+```mermaid
+sequenceDiagram
+  participant Reader
+  participant Document
+  Reader->>Document: Open and read
+  Document-->>Reader: Render documented content
+```

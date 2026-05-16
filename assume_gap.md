@@ -71,3 +71,12 @@ flowchart LR
 5. Add on-chain/off-chain reconciliation procedure.
 
 This is what can still be missing **even after** the currently known requirement gaps are fully resolved.
+
+## Sequence Diagram
+```mermaid
+sequenceDiagram
+  participant Reader
+  participant Document
+  Reader->>Document: Open and read
+  Document-->>Reader: Render documented content
+```

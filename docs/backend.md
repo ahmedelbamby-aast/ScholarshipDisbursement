@@ -1,88 +1,108 @@
-# Backend Technical Documentation
+# Backend Architecture (Verified)
 
-## Context
-Backend is the orchestration boundary between admin actions and blockchain state transitions, with optional PostgreSQL audit persistence.
+## Overview
+Backend is an Express API exposing auth/user routes and scholarship/audit/export routes.
 
-## Scope
-- `backend/src/app.js`
-- `backend/src/routes/*`
-- `backend/src/services/*`
-- `backend/src/repositories/*`
-- `backend/src/validators/*`
-- `backend/src/contract.js`
-- `backend/src/postgres.js`
-- `backend/src/middleware/*`
+## Responsibilities
+- Parse/validate requests.
+- Enforce authentication and RBAC.
+- Execute chain transactions for admin actions.
+- Persist and query audit/user/session data in PostgreSQL.
+- Provide telemetry and file exports.
 
-## Architecture / Flow
+## Internal Interactions
 ```mermaid
 flowchart TD
-  REQ[HTTP Request] --> MW1[request-context]
-  MW1 --> MW2[request-logger]
-  MW2 --> RT[routes]
-  RT --> VAL[validators]
-  VAL --> SVC[services]
-  SVC --> CHAIN[contract adapter]
-  SVC --> REPO[audit repository]
-  REPO --> PG[(PostgreSQL)]
-  RT --> ERR[error-handler]
+  App[app.js] --> Health[health-routes.js]
+  App --> Auth[auth-routes.js]
+  App --> Scholarship[scholarship-routes.js]
+
+  Scholarship --> Sess[requireSession]
+  Scholarship --> Role[requireRole]
+  Scholarship --> Svc[scholarship-service.js]
+  Scholarship --> ExportSvc[export-service.js]
+
+  Auth --> AuthSvc[auth-service.js]
+  AuthSvc --> UserRepo[user-repository.js]
+
+  Svc --> ContractSvc[contract-service.js]
+  Svc --> AuditRepo[audit-repository.js]
+
+  ContractSvc --> ContractAdapter[contract.js]
+  AuditRepo --> Pg[postgres.js]
+  UserRepo --> Pg
 ```
 
-- Validation and dependency checks happen before side effects.
-- Service layer keeps chain operations and repository operations explicit.
-- Error handler normalizes API response shape.
+### Diagram Explanation
+- Route handlers call service functions; services call repositories/contract adapter.
+- `scholarshipRouter.use(requireSession)` applies auth before route-specific role checks.
+- Export routes call export-service directly.
+- Inputs: HTTP requests and params.
+- Outputs: JSON or binary export responses.
+- Error handling path converges through `errorHandler` middleware.
 
-## Components / Interfaces
-- Health:
-  - `GET /api/health`
-- Scholarship operations:
-  - `POST /api/scholarships/approve`
-  - `POST /api/scholarships/release`
-  - `GET /api/scholarships/approved`
-- Audit history:
-  - `GET /api/audits/history?page=&pageSize=&studentAddress=`
-
+## Request Lifecycle
 ```mermaid
 sequenceDiagram
-  participant Client
-  participant Route as scholarship-routes.js
-  participant Validator
-  participant Service as scholarship-service.js
-  participant Chain as contract-service.js
-  participant Repo as audit-repository.js
-  participant DB as PostgreSQL
+  participant C as Client
+  participant A as app.js
+  participant S as requireSession
+  participant R as requireRole
+  participant H as Route Handler
+  participant V as Validator
+  participant SV as Service
+  participant RP as Repository/Chain
 
-  Client->>Route: POST /api/scholarships/approve
-  Route->>Validator: parseApprovalPayload
-  Validator-->>Route: normalized payload
-  Route->>Service: approveScholarship(payload)
-  Service->>Chain: approveOnChain + wait(tx)
-  Chain-->>Service: txHash
-  Service->>Repo: saveApprovalAudit
-  Repo->>DB: insert scholarship_approvals
-  Service-->>Route: txHash
-  Route-->>Client: 201 {ok, txHash}
+  C->>A: HTTP request
+  A->>S: requireSession (protected routers)
+  S->>R: requireRole
+  R->>H: enter handler
+  H->>V: parse/validate payload
+  V-->>H: normalized input
+  H->>SV: business call
+  SV->>RP: chain/db operations
+  RP-->>SV: result
+  SV-->>H: response payload
+  H-->>C: HTTP response
 ```
 
-- Route/validator/service/repository boundaries match current implementation files.
-- Error normalization is centralized and preserves `{ error }` response shape.
+### Diagram Explanation
+- This sequence is implemented in `scholarship-routes.js` and validators/services modules.
+- If any stage throws, `normalizeRouteError` and `errorHandler` return error JSON.
 
-## Failure Modes and Recovery
-- Contract client unavailable:
-  - return `503` with deterministic message.
-- PostgreSQL unavailable:
-  - audit endpoints and write paths fail clearly.
-- Invalid inputs:
-  - `400` validation errors with explicit field expectations.
-- Slow chain confirmations:
-  - tx wait guarded by timeout in contract service.
+## External Dependencies
+- `ethers` for chain provider/wallet/contract calls.
+- `pg` for DB pool and queries.
+- `pdfkit` and `xlsx` for export generation.
 
-## Validation Checklist
-1. Start backend: `npm.cmd run start:backend`
-2. Check health: `GET /api/health`
-3. Submit invalid payloads and confirm `400`
-4. Confirm dependency failures return deterministic `503`
-5. Run `npm.cmd run test:backend`
+## Data Flow
+- Approval/release: request -> chain tx -> tx hash -> audit insert.
+- Audit history: query two audit tables -> merge by created_at in frontend.
+- Session auth: Bearer token -> session lookup join with users.
 
-## Open Questions
-- Add request metrics export (latency histograms)?
-- Introduce retry policy for transient RPC errors?
+## Failure/Error Flow
+- Missing token and no legacy role header -> `Authentication required`.
+- Expired/nonexistent session -> `Invalid or expired session`.
+- DB unconfigured -> `PostgreSQL not configured` (`503`).
+- Contract not configured -> dependency unavailable (`503`).
+
+## Security Considerations
+- RBAC roles: `admin`, `auditor`, `student`.
+- Admin-only endpoints: approve/release/audit edit/export/student verify.
+- Legacy `x-user-role` shortcut exists in `requireSession` for compatibility.
+
+## Scalability Considerations
+- Pagination cap in audit history query parser (`max 50`).
+- Telemetry and movement lookback bounded by query parameter caps.
+
+## Performance Considerations
+- Contract transaction waits are timeout guarded.
+- Uses cached contract client and pooled DB connections.
+
+## Code References
+- `backend/src/app.js`
+- `backend/src/routes/auth-routes.js`
+- `backend/src/routes/scholarship-routes.js`
+- `backend/src/services/*.js`
+- `backend/src/repositories/*.js`
+- `backend/src/middleware/*.js`

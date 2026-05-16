@@ -29,3 +29,12 @@
 - Off-chain audit rows: `scholarship_approvals`, `scholarship_releases`.
 - Only `admin` can edit audit metadata/status.
 - `auditor` and `student` have view-only access where allowed by role.
+
+## Sequence Diagram
+```mermaid
+sequenceDiagram
+  participant Reader
+  participant Document
+  Reader->>Document: Open and read
+  Document-->>Reader: Render documented content
+```

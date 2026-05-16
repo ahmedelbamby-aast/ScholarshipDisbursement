@@ -1,105 +1,99 @@
-# ScholarshipDisbursement Codebase
+# Codebase Architecture (Verified)
 
-## Context
-This repository implements a scholarship approval-and-disbursement platform with:
-- Solidity smart contract lifecycle (approve, fund, release, claim, recover).
-- Express backend for admin orchestration and audit persistence.
-- Static frontend (admin + student) and wallet-driven claim path.
-- Dockerized runtime topology (postgres, chain, deployer, backend, frontend).
-- Multi-layer tests (unit, integration, system, backend API, frontend smoke).
+## Overview
+This repository implements a scholarship disbursement system with:
+- Solidity contract (`contracts/ScholarshipApprovalRelease.sol`)
+- Express backend (`backend/src/*`)
+- Static frontend pages/scripts (`frontend/*`)
+- PostgreSQL schema (`postgres/init/001_schema.sql`)
+- Docker Compose runtime profiles (`docker-compose.yml`)
 
-## Scope
-This document is the master map for technical docs in this folder.
+## Responsibilities
+- Frontend: role login/register pages, admin operations, student MetaMask claim flow.
+- Backend: auth/session/RBAC, chain transaction orchestration, audit persistence, telemetry, exports.
+- Contract: approval/release/claim/recovery invariants and event emission.
+- Database: audit history, app users/sessions, wallet nonce challenges.
 
-```mermaid
-flowchart TD
-  A[codebase.md] --> B[frontend.md]
-  A --> C[backend.md]
-  A --> D[contracts.md]
-  A --> E[blockchain-lifecycle.md]
-  A --> F[cross-interactions.md]
-  A --> G[database.md]
-  A --> H[testing.md]
-```
-
-- Read this file first for navigation.
-- Each linked doc follows the same structure and terminology.
-- API contracts and naming are preserved from implementation.
-
-## Architecture / Flow
+## Internal Interactions
 ```mermaid
 flowchart LR
-  U1[Admin UI] -->|POST /api/scholarships/approve| API[Backend API]
-  U1 -->|POST /api/scholarships/release| API
-  U1 -->|GET /api/audits/history| API
-  U2[Student UI] -->|wallet tx claimInstallment| SC[ScholarshipApprovalRelease]
-  API -->|ethers signer| SC
-  API -->|audit writes| DB[(PostgreSQL)]
-  CH[Ganache/JSON-RPC] --> SC
-  DEP[Deployer Script] -->|contract-address + metadata| RT[(runtime_data)]
-  RT --> API
+  Frontend[frontend pages + js] --> Backend[Express backend]
+  Backend --> Contract[ScholarshipApprovalRelease.sol]
+  Backend --> DB[(PostgreSQL)]
+  Contract --> Chain[EVM RPC provider]
 ```
 
-- Backend is the control plane for approval and release.
-- Student claim executes directly on-chain from wallet signer.
-- Database is for audit history, not contract state authority.
+### Diagram Explanation
+- `frontend/js/admin-dashboard.js` and `frontend/js/auth-pages.js` issue HTTP requests to backend (`fetch(...)`).
+- `backend/src/routes/scholarship-routes.js` invokes service layer methods.
+- `backend/src/services/contract-service.js` uses `ethers.Contract` calls through provider/signer.
+- `backend/src/repositories/*` writes and reads PostgreSQL tables.
+- Inputs: HTTP payloads, auth tokens, wallet signatures, query params.
+- Outputs: JSON responses, export binary payloads, blockchain tx hashes.
+- Error paths: validation errors (400), auth errors (403/401), dependency errors (503), server fallback (500).
+- Security: `requireSession` + `requireRole` protect APIs; student MetaMask login uses nonce challenge.
+- Performance: audit pagination with page/pageSize caps; telemetry bounded by block lookback.
 
+## External Dependencies
+- Node.js runtime
+- `ethers`, `express`, `pg`, `helmet`, `cors`, `pdfkit`, `xlsx`
+- Docker services: postgres, frontend, backend, optional chain/deployer in hardhat profile
+
+## Data Flow
 ```mermaid
-journey
-  title App User Flow
-  section Admin
-    Open admin dashboard: 5: Admin
-    Approve scholarship (API): 5: Admin
-    Release installment (API): 4: Admin
-    Review audit history: 4: Admin
-  section Student
-    Connect wallet: 4: Student
-    Claim released installment: 5: Student
-  section Provider
-    Fund contract pool: 3: Provider
+flowchart TD
+  A[Admin approve/release API call] --> B[Backend service]
+  B --> C[On-chain tx confirm]
+  C --> D[Audit row insert]
+  D --> E[Audit history/read/export]
+
+  F[Student MetaMask sign-in] --> G[Nonce + signature verification]
+  G --> H[Session token]
+  H --> I[Student claim tx (wallet to contract)]
 ```
 
-- Admin actions are backend-mediated and persisted to DB audits.
-- Student claim is wallet-mediated and not routed through backend submission.
+### Diagram Explanation
+- Admin action flow: routes -> services -> contract tx wait -> repository insert.
+- Student login flow: nonce issue -> signature verify -> create DB session.
+- Student claim is direct contract interaction from browser signer.
+- Export flow merges chain telemetry events and DB audit rows before rendering CSV/XLSX/PDF.
 
-## Components / Interfaces
-- Frontend: `frontend/index.html`, `frontend/admin.html`, `frontend/student-dashboard.html`
-- Backend: `backend/src/app.js`, routes/services/repositories/validators
-- Contract: `contracts/ScholarshipApprovalRelease.sol`
-- Deployment: `scripts/deploy.js`, `scripts/deployer.js`
-- DB schema: `postgres/init/001_schema.sql`
-- Tests: `test/unit`, `test/integration`, `test/system`, `test/backend`, `test/frontend`
+## Failure/Error Flow
+- Contract not configured or RPC unreachable -> dependency unavailable error and `503`.
+- DB absent/unconfigured -> audit/user endpoints fail with deterministic `503`.
+- Invalid auth/signature/role -> `401`/`403`.
 
-## Failure Modes and Recovery
-- Chain not ready / contract not configured:
-  - Backend returns `503` with deterministic message.
-- DB not configured:
-  - Audit endpoints return `503`.
-- Expired claim windows:
-  - Admin can call `recoverExpiredInstallment`.
-- Runtime handoff mismatch:
-  - Deployer writes both contract address and metadata to shared runtime volume.
+## Security Considerations
+- Session token required on protected routes (`authorization: Bearer ...`).
+- RBAC enforces role-specific operations.
+- Nonce-based MetaMask login prevents replay without nonce lifecycle.
+- **UNVERIFIED**: no CSRF token system implemented for browser sessions.
 
-## Validation Checklist
-1. `npm.cmd run compile`
-2. `npm.cmd run test:unit`
-3. `npm.cmd run test:integration`
-4. `npm.cmd run test:system`
-5. `npm.cmd run test:backend`
-6. `npm.cmd run test:frontend`
-7. `docker compose up -d --build`
-8. Verify `/api/health` and frontend `/health`
+## Scalability Considerations
+- Telemetry/event queries are bounded by lookback block count.
+- Audit reads are paginated and filtered by student address.
+- Export pulls max 5000 audit rows per export call.
 
-## Open Questions
-- Should student claim path also be mirrored through backend for a unified audit source?
-- Do we want contract event indexing jobs (off-chain indexer) in addition to DB writes?
-- Is multi-admin or role-based governance needed beyond single `owner`?
+## Performance Considerations
+- Transaction confirmation is timeout-wrapped.
+- DB operations use pooled connections.
+- Telemetry groups events in memory by block/day.
 
-## Detailed Documents
-- `docs/frontend.md`
-- `docs/backend.md`
-- `docs/contracts.md`
-- `docs/blockchain-lifecycle.md`
-- `docs/cross-interactions.md`
-- `docs/database.md`
-- `docs/testing.md`
+## Code References
+- `backend/src/app.js`
+- `backend/src/routes/*.js`
+- `backend/src/services/*.js`
+- `backend/src/repositories/*.js`
+- `frontend/js/*.js`
+- `contracts/ScholarshipApprovalRelease.sol`
+- `postgres/init/001_schema.sql`
+- `docker-compose.yml`
+
+## Sequence Diagram
+```mermaid
+sequenceDiagram
+  participant Reader
+  participant Document
+  Reader->>Document: Open and read
+  Document-->>Reader: Render documented content
+```

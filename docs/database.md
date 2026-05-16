@@ -1,14 +1,14 @@
-# Database Documentation
+# Database Architecture (Verified)
 
-## Context
-PostgreSQL stores audit records for approval and release actions initiated through backend orchestration.
+## Overview
+PostgreSQL stores audit logs and application identity/session data.
 
-## Scope
-- `postgres/init/001_schema.sql`
-- backend audit repository query model
-- pagination and filtering semantics
+## Responsibilities
+- Persist scholarship approval/release audit rows.
+- Persist users, sessions, and wallet nonce challenges.
+- Provide query surfaces for history and student verification flows.
 
-## Architecture / Flow
+## Entity Relationship Diagram
 ```mermaid
 erDiagram
   scholarship_approvals {
@@ -18,7 +18,9 @@ erDiagram
     text amount_wei
     int installments
     int claim_window_seconds
-    text tx_hash
+    text tx_hash UK
+    text audit_status
+    text audit_note
   }
 
   scholarship_releases {
@@ -26,36 +28,98 @@ erDiagram
     timestamptz created_at
     text student_address
     int installment_number
-    text tx_hash
+    text tx_hash UK
+    text audit_status
+    text audit_note
   }
+
+  app_users {
+    bigint id PK
+    timestamptz created_at
+    text full_name
+    text email UK
+    text password_hash
+    text role
+    text wallet_address
+    bool is_verified
+    timestamptz verified_at
+  }
+
+  app_sessions {
+    bigint id PK
+    timestamptz created_at
+    bigint user_id FK
+    text session_token UK
+    timestamptz expires_at
+  }
+
+  app_wallet_nonces {
+    text wallet_address PK
+    text nonce
+    timestamptz expires_at
+  }
+
+  app_users ||--o{ app_sessions : user_id
 ```
 
-- `tx_hash` is unique per table for idempotency protection.
-- `student_address` and `created_at` indexes support filtering and recency views.
-- Data is append-only audit history (no mutable business state).
+### Diagram Explanation
+- `app_sessions.user_id` is the only explicit FK (`references app_users(id)`).
+- `app_wallet_nonces` is keyed by wallet string; no explicit FK to users.
+- Audit tables are independent and queried in parallel then merged by API.
 
-## Components / Interfaces
-- Insert paths:
-  - approval tx receipt -> `scholarship_approvals`
-  - release tx receipt -> `scholarship_releases`
-- Read path:
-  - `GET /api/audits/history` merges both tables in backend response.
+## Internal Interactions
+- Audit writes: `saveApprovalAudit`, `saveReleaseAudit`.
+- Audit reads: `getAuditHistory`, `getAuditRowsForExport`.
+- Auth/session: `findUserByEmail`, `createSession`, `findSession`.
+- Wallet login: `saveWalletNonce`, `getWalletNonce`, `deleteWalletNonce`, `findStudentByWallet`.
 
-## Failure Modes and Recovery
-- `DATABASE_URL` missing:
-  - backend returns deterministic `503`.
-- write conflict on duplicate tx hash:
-  - backend surfaces safe write-failure message.
-- connectivity disruption:
-  - request fails; no partial success in DB for that request.
+## External Dependencies
+- PostgreSQL via `pg` Pool.
 
-## Validation Checklist
-1. Start `postgres` container and ensure healthy
-2. Confirm schema auto-applied at startup
-3. Trigger approval/release and verify inserted rows
-4. Call audit history endpoint with pagination
-5. Call audit history with `studentAddress` filter
+## Data Flow
+```mermaid
+flowchart LR
+  ApproveRelease[approve/release service calls] --> AuditRepo[audit-repository.js]
+  AuditRepo --> Approvals[(scholarship_approvals)]
+  AuditRepo --> Releases[(scholarship_releases)]
 
-## Open Questions
-- Do we need archival/retention policy for old audit rows?
-- Should combined view materialization be added for large datasets?
+  AuthSvc[auth-service.js] --> UserRepo[user-repository.js]
+  UserRepo --> Users[(app_users)]
+  UserRepo --> Sessions[(app_sessions)]
+  UserRepo --> Nonces[(app_wallet_nonces)]
+```
+
+### Diagram Explanation
+- Admin chain actions write tx-backed audit rows.
+- Auth uses users+sessions; MetaMask login uses nonce table.
+
+## Failure/Error Flow
+- Missing `DATABASE_URL` -> dependency unavailable error path.
+- Duplicate unique keys (email/session_token/tx_hash) can reject writes.
+
+## Security Considerations
+- Passwords stored as hash format (`scrypt:*`) for registered users; seeded admin uses `plain:` bootstrap value.
+- Sessions expire by `expires_at` and are validated in queries.
+
+## Scalability Considerations
+- Indexes on audit tables for `student_address` and `created_at`.
+- History endpoint is paginated.
+
+## Performance Considerations
+- DB pool reuse.
+- Parallel queries for approvals/releases in history and export read paths.
+
+## Code References
+- `postgres/init/001_schema.sql`
+- `backend/src/repositories/audit-repository.js`
+- `backend/src/repositories/user-repository.js`
+- `backend/src/postgres.js`
+
+## Sequence Diagram
+```mermaid
+sequenceDiagram
+  participant Reader
+  participant Document
+  Reader->>Document: Open and read
+  Document-->>Reader: Render documented content
+```

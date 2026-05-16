@@ -52,3 +52,12 @@ High
 
 ## Unverified/Missing Areas
 - No queue/event-bus handlers in this route file.
+
+## Sequence Diagram
+```mermaid
+sequenceDiagram
+  participant Reader
+  participant Document
+  Reader->>Document: Open and read
+  Document-->>Reader: Render documented content
+```

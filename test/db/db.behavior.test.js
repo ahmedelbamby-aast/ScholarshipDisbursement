@@ -19,4 +19,15 @@ describe("DB/Input behavior", function () {
       })
     ).to.throw();
   });
+
+  it("allows non-student registration without wallet address", function () {
+    const result = parseRegisterPayload({
+      fullName: "Auditor One",
+      email: "auditor@example.com",
+      password: "secret123",
+      role: "auditor",
+    });
+    expect(result.role).to.equal("auditor");
+    expect(result.walletAddress).to.equal("");
+  });
 });

@@ -2,6 +2,16 @@
 
 Scholarship approval and release platform with a Solidity contract, Hardhat tests, admin/student dashboards, and an Express backend ready for local and containerized delivery.
 
+## Verified Architecture Docs
+
+- Canonical engineering diagrams and subsystem documentation are in:
+  - [docs/README.md](C:\Users\Ahmed\Desktop\projects\blockchain\ScholarshipDisbursement\docs\README.md)
+- Those docs are generated/updated from implemented code paths (routes/services/repositories/schema/compose/scripts), including:
+  - session/RBAC auth flows
+  - MetaMask student login flow
+  - telemetry + export flows
+  - hardhat/sepolia profile deployment wiring
+
 ## Requirement Check (Ahmed Banby scope)
 
 The requested scope was checked against this project and implemented where missing:
@@ -163,3 +173,12 @@ npm run deploy:sepolia
   - Installment Release
   - Claim Window
   - Audit Event Log
+
+## Sequence Diagram
+```mermaid
+sequenceDiagram
+  participant Reader
+  participant Document
+  Reader->>Document: Open and read
+  Document-->>Reader: Render documented content
+```

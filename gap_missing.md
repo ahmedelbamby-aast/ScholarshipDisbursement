@@ -73,3 +73,12 @@ flowchart TD
 2. Add **demo evidence artifacts** (screenshots or video links).
 3. Add a concise **security/design decision section** (access control, fund safety, claim-window logic, auditability).
 4. Stabilize reproducible **full test execution runbook** under local constraints.
+
+## Sequence Diagram
+```mermaid
+sequenceDiagram
+  participant Reader
+  participant Document
+  Reader->>Document: Open and read
+  Document-->>Reader: Render documented content
+```

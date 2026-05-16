@@ -26,6 +26,8 @@ function parseRegisterPayload(body) {
     if (!ethers.isAddress(walletAddress)) {
       throw new ValidationError("Valid wallet address is required for students");
     }
+  } else if (walletAddress && !ethers.isAddress(walletAddress)) {
+    throw new ValidationError("Wallet address must be valid when provided");
   }
 
   return {
@@ -33,7 +35,7 @@ function parseRegisterPayload(body) {
     email,
     password,
     role,
-    walletAddress: role === "student" ? walletAddress : "",
+    walletAddress,
   };
 }
 
@@ -49,7 +51,7 @@ function parseLoginPayload(body) {
 function parseStudentId(rawId) {
   const id = Number(rawId);
   if (!Number.isInteger(id) || id <= 0) {
-    throw new ValidationError("Student id must be a positive integer");
+    throw new ValidationError("User id must be a positive integer");
   }
   return id;
 }

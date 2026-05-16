@@ -44,3 +44,12 @@
 - No API shape regressions.
 - Identity alignment documented for each changed module.
 - All relevant tests pass.
+
+## Sequence Diagram
+```mermaid
+sequenceDiagram
+  participant Reader
+  participant Document
+  Reader->>Document: Open and read
+  Document-->>Reader: Render documented content
+```

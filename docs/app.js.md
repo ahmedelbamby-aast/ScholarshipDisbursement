@@ -46,3 +46,12 @@ High
 
 ## Unverified/Missing Areas
 - No additional app-level services are registered in this file.
+
+## Sequence Diagram
+```mermaid
+sequenceDiagram
+  participant Reader
+  participant Document
+  Reader->>Document: Open and read
+  Document-->>Reader: Render documented content
+```

@@ -141,3 +141,12 @@ Current work focuses on **delivery/submission completeness**, **demo artifacts**
 
 ## Immediate Next Action
 - Capture and attach real demo evidence files in `docs/demo/screenshots/`, then set matrix `Result` values in `docs/submission-packet.md`.
+
+## Sequence Diagram
+```mermaid
+sequenceDiagram
+  participant Reader
+  participant Document
+  Reader->>Document: Open and read
+  Document-->>Reader: Render documented content
+```

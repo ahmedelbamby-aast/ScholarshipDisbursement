@@ -1,68 +1,73 @@
-# Blockchain Lifecycle Documentation
+# Blockchain Lifecycle (Verified)
 
-## Context
-This document describes the end-to-end on-chain lifecycle from approval to final claim/recovery.
+## Overview
+Lifecycle covers contract deployment resolution, admin tx orchestration, student claim, and telemetry reads.
 
-## Scope
-- Contract lifecycle semantics
-- Deployer and runtime handoff
-- Chain-dependent backend operations
+## Responsibilities
+- Network profile resolution (`hardhat` or `sepolia`).
+- Contract address resolution from metadata/env/file.
+- Admin tx flows: approve/release.
+- Student wallet tx flow: claim.
 
-## Architecture / Flow
+## Lifecycle Sequence
 ```mermaid
 sequenceDiagram
-  participant Admin
-  participant Backend
-  participant Contract
-  participant Student
-  participant Provider
+  participant Config as config/network-profile.js
+  participant Adapter as backend/src/contract.js
+  participant AdminAPI as scholarship routes/services
+  participant Contract as ScholarshipApprovalRelease
+  participant Student as student-dashboard.js
 
-  Admin->>Backend: approve request
-  Backend->>Contract: approveScholarship
-  Backend-->>Admin: txHash
-
-  Provider->>Contract: fundScholarship(value)
-
-  Admin->>Backend: release request (n)
-  Backend->>Contract: releaseInstallment(student, n)
-  Backend-->>Admin: txHash
-
-  Student->>Contract: claimInstallment(n)
-  alt claimed in time
-    Contract-->>Student: transfer amount
-  else window expired
-    Admin->>Contract: recoverExpiredInstallment(student, n)
-  end
+  Config->>Adapter: resolveNetworkConfig + rpcUrl/chainId/key
+  Adapter->>Adapter: resolve contract address (metadata/env/file)
+  AdminAPI->>Contract: approveScholarship/releaseInstallment
+  Contract-->>AdminAPI: tx receipt hash
+  Student->>Contract: claimInstallment via MetaMask signer
+  Contract-->>Student: tx receipt hash
 ```
 
-- Backend controls approve/release.
-- Student controls claim with wallet signer.
-- Recovery is explicit admin fallback after deadline.
+### Diagram Explanation
+- Backend contract adapter is signer-based (`ethers.Wallet`) for admin actions.
+- Student claim path uses browser signer and does not proxy claim tx through backend.
 
-## Components / Interfaces
-- Runtime inputs:
-  - `RPC_URL`, `CHAIN_ID`, `ADMIN_PRIVATE_KEY`
-  - `CONTRACT_ADDRESS` or `CONTRACT_ADDRESS_FILE`
-  - `CONTRACT_METADATA_FILE`
-- Deployment output files:
-  - `runtime/contract-address`
-  - `runtime/contract-metadata.json`
+## Event Consumption Flow
+```mermaid
+flowchart LR
+  ContractEvents[Funded/Released/Claimed events] --> Funds[getFundsMovement]
+  ContractEvents --> Telemetry[getChainTelemetry]
+  Telemetry --> Exports[export-service buildExportRows]
+```
 
-## Failure Modes and Recovery
-- RPC unreachable:
-  - deployer waits with bounded retries and fails explicitly.
-- Contract address mismatch:
-  - backend resolves metadata/address file fallback.
-- Confirmation timeout:
-  - backend returns deterministic timeout errors.
+### Diagram Explanation
+- Telemetry and funds APIs query on-chain logs via `contract.queryFilter`.
+- Export service includes telemetry-derived chain rows plus DB audit rows.
 
-## Validation Checklist
-1. Start chain (`docker compose up chain`)
-2. Run deployer (`docker compose up deployer`)
-3. Verify runtime files exist
-4. Execute approve/release/claim path
-5. Simulate expiry and test recovery path
+## Internal Interactions
+- `backend/src/config.js` uses `resolveNetworkConfig`.
+- `backend/src/contract.js` builds/returns cached contract client.
+- `backend/src/services/contract-service.js` executes tx and event queries.
 
-## Open Questions
-- Do we need chain reorg-safe finality rules beyond one confirmation?
-- Should claim include optional backend attestation for analytics?
+## External Dependencies
+- RPC endpoint from resolved profile.
+- MetaMask for student-side claim submission.
+
+## Failure/Error Flow
+- Missing/invalid contract address or key -> adapter returns null -> dependency error.
+- Tx confirmation timeout -> explicit error from timeout wrapper.
+
+## Security Considerations
+- Admin tx signer key is backend-side.
+- Student claim signer is wallet-side.
+
+## Scalability Considerations
+- Event lookback is bounded.
+
+## Performance Considerations
+- Contract client cache by rpc/chain/address/key tuple.
+
+## Code References
+- `config/network-profile.js`
+- `backend/src/config.js`
+- `backend/src/contract.js`
+- `backend/src/services/contract-service.js`
+- `frontend/js/student-dashboard.js`

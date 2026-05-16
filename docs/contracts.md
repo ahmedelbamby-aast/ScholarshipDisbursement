@@ -1,69 +1,77 @@
-# Smart Contract Technical Documentation
+# Smart Contract Architecture (Verified)
 
-## Context
-`ScholarshipApprovalRelease.sol` defines scholarship lifecycle rules and enforces owner-gated administrative actions.
+## Overview
+`ScholarshipApprovalRelease.sol` enforces scholarship approval, installment release, claim windows, and recovery.
 
-## Scope
-- `contracts/ScholarshipApprovalRelease.sol`
-- On-chain events and state transitions consumed by frontend/backend/tests.
+## Responsibilities
+- Owner-gated admin operations: approve, release, recover.
+- Student claim operation bounded by release state and deadline.
+- Emit lifecycle events for observability.
 
-## Architecture / Flow
+## State Diagram
 ```mermaid
 stateDiagram-v2
-  [*] --> Pending
-  Pending --> Approved: approveScholarship
-  Approved --> Funded: fundScholarship
-  Funded --> Released: releaseInstallment(n)
-  Released --> Claimed: claimInstallment(n) within window
-  Released --> Recovered: recoverExpiredInstallment(n) after window
-  Claimed --> Released: releaseInstallment(next)
+  [*] --> Unapproved
+  Unapproved --> Approved: approveScholarship
+  Approved --> Released: releaseInstallment
+  Released --> Claimed: claimInstallment (before deadline)
+  Released --> Recovered: recoverExpiredInstallment (after deadline)
+  Recovered --> Released: releaseInstallment replacement
   Claimed --> Completed: claimedInstallments == installments
-  Recovered --> Released: releaseInstallment(replacement)
+  Claimed --> Approved: more installments pending
 ```
 
-- Release order is strict (`n == releasedInstallments + 1`).
-- Final installment carries integer division remainder.
-- Recovery reopens release sequence for replacement installment.
+### Diagram Explanation
+- Transition guards are implemented via `require(...)` checks in write methods.
+- Release order invariant: installment number must be `releasedInstallments + 1`.
+- Recovery decreases release counters to allow replacement release.
 
-## Components / Interfaces
-Public write functions:
-- `approveScholarship(address,uint256,uint256,uint256)`
-- `fundScholarship() payable`
-- `releaseInstallment(address,uint256)`
-- `claimInstallment(uint256)`
-- `recoverExpiredInstallment(address,uint256)`
+## Event Flow
+```mermaid
+flowchart LR
+  Approve[approveScholarship] --> E1[ScholarshipApproved]
+  Fund[fundScholarship] --> E2[ScholarshipFunded]
+  Release[releaseInstallment] --> E3[InstallmentReleased]
+  Claim[claimInstallment] --> E4[InstallmentClaimed]
+  Recover[recoverExpiredInstallment] --> E5[ExpiredInstallmentRecovered]
+```
 
-Public read functions:
-- `getScholarship(address)`
-- `getInstallmentInfo(address,uint256)`
-- `getApprovedStudents()`
-- `isApproved(address)`
+### Diagram Explanation
+- Backend telemetry uses funded/released/claimed events through `queryFilter`.
+- Recovery event exists in contract but current telemetry API does not consume it.
 
-Events:
-- `ScholarshipApproved`
-- `ScholarshipFunded`
-- `InstallmentReleased`
-- `InstallmentClaimed`
-- `ExpiredInstallmentRecovered`
+## Internal Interactions
+- Uses structs `Scholarship` and `Installment`.
+- Uses mappings for per-student scholarship/installment records.
+- Uses `fundedBalance` as contract-level pool balance.
 
-## Failure Modes and Recovery
-- Unauthorized admin operations:
-  - `OwnableUnauthorizedAccount` custom error.
-- Out-of-order or out-of-range release:
-  - explicit revert reasons.
-- Missed claim window:
-  - claim reverts; admin recovery path available.
-- Transfer failure on claim:
-  - revert ensures accounting consistency.
+## External Dependencies
+- None on-chain beyond Solidity runtime.
 
-## Validation Checklist
-1. `npm.cmd run compile`
-2. `npm.cmd run test:feature:approval`
-3. `npm.cmd run test:feature:release`
-4. `npm.cmd run test:feature:claim`
-5. `npm.cmd run test:feature:recovery`
-6. `npm.cmd run test:feature:audit`
+## Failure/Error Flow
+- Unauthorized admin caller -> custom error `OwnableUnauthorizedAccount`.
+- Invalid params/order/range/window -> revert messages.
+- Failed payout transfer -> revert `Transfer failed`.
 
-## Open Questions
-- Should owner transfer/renounce semantics be added?
-- Should recipient whitelist lifecycle include explicit revocation?
+## Security Considerations
+- `onlyOwner` gate on privileged functions.
+- Pull-payment claim pattern with call and revert-on-failure.
+
+## Scalability Considerations
+- Per-student mapping lookups are O(1)-style storage access.
+- Approved student list grows append-only.
+
+## Performance Considerations
+- Minimal arithmetic and state writes per operation.
+
+## Code References
+- `contracts/ScholarshipApprovalRelease.sol`
+
+## Sequence Diagram
+```mermaid
+sequenceDiagram
+  participant Reader
+  participant Document
+  Reader->>Document: Open and read
+  Document-->>Reader: Render documented content
+```

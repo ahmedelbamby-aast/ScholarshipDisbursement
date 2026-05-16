@@ -65,3 +65,12 @@ Identity Refactor Plan
 - Identity details: `references/identity-baseline.md`
 - Library/version profile: `references/library-profile.md`
 - Refactor checklist: `references/refactor-checklist.md`
+
+## Sequence Diagram
+```mermaid
+sequenceDiagram
+  participant Reader
+  participant Document
+  Reader->>Document: Open and read
+  Document-->>Reader: Render documented content
+```

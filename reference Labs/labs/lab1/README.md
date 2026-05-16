@@ -27,3 +27,12 @@ docker compose run --rm deployer
 3. Deploy the contract and refresh the page.
 4. Change the stored value from the browser.
 5. Preview `CertificateRegistry.sol` as the next step.
+
+## Sequence Diagram
+```mermaid
+sequenceDiagram
+  participant Reader
+  participant Document
+  Reader->>Document: Open and read
+  Document-->>Reader: Render documented content
+```

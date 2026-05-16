@@ -41,3 +41,12 @@ Raw payload snapshot:
 
 ## Notes
 - Student claim screenshot with wallet popup is not auto-capturable in headless mode; tx-level claim proof is included via on-chain receipt hash above.
+
+## Sequence Diagram
+```mermaid
+sequenceDiagram
+  participant Reader
+  participant Document
+  Reader->>Document: Open and read
+  Document-->>Reader: Render documented content
+```

@@ -14,4 +14,11 @@ describe("Security: authorization boundaries", function () {
     const response = await request(app).get("/api/audits/history?page=1&pageSize=5");
     expect(response.status).to.equal(403);
   });
+
+  it("blocks role without admin privilege from verifying users", async function () {
+    const response = await request(app)
+      .patch("/api/users/2/verify")
+      .set("x-user-role", "student");
+    expect(response.status).to.equal(403);
+  });
 });

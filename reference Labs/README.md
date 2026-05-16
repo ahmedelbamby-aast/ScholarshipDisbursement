@@ -94,3 +94,12 @@ Lab 1 is deliberately lightweight:
 - local blockchain only
 - no public testnet friction
 - room to evolve into the certificate registry project
+
+## Sequence Diagram
+```mermaid
+sequenceDiagram
+  participant Reader
+  participant Document
+  Reader->>Document: Open and read
+  Document-->>Reader: Render documented content
+```

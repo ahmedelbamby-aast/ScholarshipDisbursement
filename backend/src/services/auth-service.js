@@ -8,10 +8,13 @@ import {
   findSession,
   findStudentByWallet,
   findUserByEmail,
+  findUserByWallet,
   getWalletNonce,
+  listUsers,
   listStudents,
   saveWalletNonce,
   verifyStudent,
+  verifyUser,
 } from "../repositories/user-repository.js";
 
 function hashPassword(password) {
@@ -37,6 +40,12 @@ async function registerUser(payload) {
   if (existing) {
     throw new AppError("Email is already registered", 409);
   }
+  if (payload.walletAddress) {
+    const walletOwner = await findUserByWallet(payload.walletAddress);
+    if (walletOwner) {
+      throw new AppError("Wallet address is already registered", 409);
+    }
+  }
   const passwordHash = hashPassword(payload.password);
   const created = await createUser({
     fullName: payload.fullName,
@@ -44,7 +53,7 @@ async function registerUser(payload) {
     passwordHash,
     role: payload.role,
     walletAddress: payload.walletAddress,
-    isVerified: payload.role === "student" ? false : true,
+    isVerified: false,
   });
   return created;
 }
@@ -54,8 +63,8 @@ async function loginUser(payload) {
   if (!user || !verifyPassword(payload.password, user.password_hash)) {
     throw new AppError("Invalid email or password", 401);
   }
-  if (user.role === "student" && !user.is_verified) {
-    throw new AppError("Student account pending admin verification", 403);
+  if (!user.is_verified) {
+    throw new AppError("Account pending admin verification", 403);
   }
   const session = await createSession(user.id);
   return {
@@ -80,10 +89,22 @@ async function listStudentUsers() {
   return listStudents();
 }
 
+async function listAllUsers() {
+  return listUsers();
+}
+
 async function approveStudentUser(studentId) {
   const updated = await verifyStudent(studentId);
   if (!updated) {
     throw new AppError("Student not found", 404);
+  }
+  return updated;
+}
+
+async function approveUser(userId) {
+  const updated = await verifyUser(userId);
+  if (!updated) {
+    throw new AppError("User not found", 404);
   }
   return updated;
 }
@@ -133,7 +154,9 @@ export {
   loginUser,
   getSessionByToken,
   listStudentUsers,
+  listAllUsers,
   approveStudentUser,
+  approveUser,
   issueWalletNonce,
   loginWithWallet,
 };

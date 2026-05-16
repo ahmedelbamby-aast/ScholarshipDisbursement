@@ -43,4 +43,13 @@ describe("Backend API", function () {
     expect(response.status).to.equal(403);
     expect(response.body.error).to.equal("Forbidden for this role");
   });
+
+  it("blocks user verification for non-admin role", async function () {
+    const response = await request(app)
+      .patch("/api/users/1/verify")
+      .set("x-user-role", "auditor");
+
+    expect(response.status).to.equal(403);
+    expect(response.body.error).to.equal("Forbidden for this role");
+  });
 });

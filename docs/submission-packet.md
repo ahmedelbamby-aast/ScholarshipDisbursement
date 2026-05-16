@@ -123,3 +123,12 @@ Required evidence set:
 ## Open Questions
 - Should backend expose read-only on-chain event aggregation endpoint?
 - Should demo evidence include a short narrated video alongside screenshots?
+
+## Sequence Diagram
+```mermaid
+sequenceDiagram
+  participant Reader
+  participant Document
+  Reader->>Document: Open and read
+  Document-->>Reader: Render documented content
+```

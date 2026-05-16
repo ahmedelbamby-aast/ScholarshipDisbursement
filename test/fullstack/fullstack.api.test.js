@@ -14,4 +14,15 @@ describe("Full-stack API surface", function () {
     const response = await request(app).post("/api/auth/metamask/nonce").send({ walletAddress: "x" });
     expect(response.status).to.equal(400);
   });
+
+  it("rejects malformed student register payload", async function () {
+    const response = await request(app).post("/api/auth/register").send({
+      fullName: "Student",
+      email: "student@example.com",
+      password: "secret123",
+      role: "student",
+      walletAddress: "invalid",
+    });
+    expect(response.status).to.equal(400);
+  });
 });

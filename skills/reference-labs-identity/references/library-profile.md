@@ -40,3 +40,12 @@ When refactoring to identity parity:
 2. Prefer adapting code shape and boundaries first before downgrading/upgrading major libraries.
 3. If you retain newer versions (for security/runtime reasons), preserve API/style semantics from labs.
 4. Document any intentional version divergence in refactor notes.
+
+## Sequence Diagram
+```mermaid
+sequenceDiagram
+  participant Reader
+  participant Document
+  Reader->>Document: Open and read
+  Document-->>Reader: Render documented content
+```
