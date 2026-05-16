@@ -116,13 +116,16 @@ Open:
 
 ## 6) Docker setup
 
-This path is fully automated now using 5 connected images/services:
+This path supports two profiles:
 
+- `hardhat` profile: local chain + auto deploy
+- `sepolia` profile: external RPC only (no local chain container)
+
+Services:
 - `postgres` (audit persistence with auto-applied schema)
-- `chain` (Ganache JSON-RPC)
-- `deployer` (one-shot contract deployment)
 - `backend` (API)
 - `frontend` (dashboard hosting)
+- `chain` + `deployer` (only when `hardhat` profile is enabled)
 
 Build images:
 
@@ -130,11 +133,23 @@ Build images:
 docker compose build
 ```
 
-Run containers:
+Run containers (Hardhat):
+
+```bash
+docker compose --profile hardhat up -d
+```
+
+Run containers (Sepolia):
 
 ```bash
 docker compose up -d
 ```
+
+For Sepolia mode set in `.env` before startup:
+- `NETWORK_PROFILE=sepolia`
+- `SEPOLIA_RPC_URL=<provider-url>`
+- `SEPOLIA_ADMIN_PRIVATE_KEY=<deployer/admin-key>`
+- `SEPOLIA_CONTRACT_ADDRESS=<already-deployed-address>`
 
 Check status:
 
@@ -142,9 +157,9 @@ Check status:
 docker compose ps
 ```
 
-Expected: `postgres`, `chain`, `backend`, and `frontend` become `healthy`.
-
-`deployer` should show `Exited (0)` after successful deployment.
+Expected:
+- Hardhat mode: `postgres`, `chain`, `backend`, `frontend` healthy, `deployer` exits `0`.
+- Sepolia mode: `postgres`, `backend`, `frontend` healthy.
 
 Optional check:
 

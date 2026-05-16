@@ -25,4 +25,18 @@ function parseAuditHistoryQuery(query) {
   };
 }
 
-export { parseAuditHistoryQuery };
+function parseFundsMovementQuery(query) {
+  const days = parsePositiveIntOrDefault(query.days, 14);
+  return {
+    days: Math.min(days, 90),
+  };
+}
+
+function parseTelemetryQuery(query) {
+  const blocks = parsePositiveIntOrDefault(query.blocks, 500);
+  return {
+    blocks: Math.min(blocks, 10000),
+  };
+}
+
+export { parseAuditHistoryQuery, parseFundsMovementQuery, parseTelemetryQuery };

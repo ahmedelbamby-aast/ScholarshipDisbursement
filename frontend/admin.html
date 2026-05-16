@@ -13,6 +13,16 @@
       <h1 class="h3 mb-0">Admin Dashboard</h1>
       <a href="index.html" class="btn btn-outline-secondary btn-sm">Back</a>
     </div>
+    <div class="row g-2 mb-3">
+      <div class="col-sm-4 col-md-3">
+        <label class="form-label" for="roleSelect">Dashboard Role</label>
+        <select id="roleSelect" class="form-select">
+          <option value="admin" selected>Admin</option>
+          <option value="auditor">Auditor (View Only)</option>
+          <option value="student">Student (View Only)</option>
+        </select>
+      </div>
+    </div>
     <p class="task-meta mb-4">Run approval and release operations in sequence. Each action publishes an on-chain transaction hash for auditing.</p>
 
     <div id="alertBox" class="alert d-none status-alert" role="alert" aria-live="polite"></div>
@@ -43,8 +53,13 @@
               </div>
               <div class="col-md-6">
                 <label class="form-label">Claim Window (seconds)</label>
-                <input id="claimWindowSeconds" type="number" min="1" class="form-control" value="86400" required />
-                <small class="form-hint">Time allowed for each installment claim after release.</small>
+                <select id="claimWindowSeconds" class="form-select" required>
+                  <option value="3600">1 hour</option>
+                  <option value="21600">6 hours</option>
+                  <option value="86400" selected>24 hours</option>
+                  <option value="259200">72 hours</option>
+                </select>
+                <small class="form-hint">Preset windows reduce misconfiguration risk.</small>
               </div>
               <div class="col-12">
                 <button type="submit" class="btn btn-primary">Approve</button>
@@ -64,8 +79,10 @@
             <form id="releaseForm" class="row g-3 mt-1">
               <div class="col-12">
                 <label class="form-label">Student Wallet Address</label>
-                <input id="releaseStudentAddress" class="form-control" required placeholder="0x..." />
-                <small class="form-hint">Must match an already approved scholarship recipient.</small>
+                <select id="releaseStudentAddress" class="form-select" required>
+                  <option value="">Select approved student</option>
+                </select>
+                <small class="form-hint">Loaded from approved recipients on chain.</small>
               </div>
               <div class="col-12">
                 <label class="form-label">Installment Number</label>
@@ -84,13 +101,87 @@
     <section class="card shadow-sm surface-card mt-4">
       <div class="card-body">
         <div class="card-title-row">
+          <h2 class="h5 mb-0">Admin Exports</h2>
+          <span class="tag-chip brand">CSV / XLSX / PDF</span>
+        </div>
+        <div class="row g-2 align-items-end mb-2">
+          <div class="col-md-3">
+            <label class="form-label" for="exportBlocks">Export Lookback Blocks</label>
+            <select id="exportBlocks" class="form-select">
+              <option value="500">500</option>
+              <option value="1000" selected>1000</option>
+              <option value="5000">5000</option>
+            </select>
+          </div>
+          <div class="col-md-9 d-flex gap-2">
+            <button id="exportCsvBtn" class="btn btn-outline-primary">Export CSV</button>
+            <button id="exportXlsxBtn" class="btn btn-outline-dark">Export Excel</button>
+            <button id="exportPdfBtn" class="btn btn-outline-success">Export PDF</button>
+          </div>
+        </div>
+        <p class="task-meta mb-0">Exports are admin-only and include blockchain events plus audit DB rows.</p>
+      </div>
+    </section>
+
+    <section class="card shadow-sm surface-card mt-4">
+      <div class="card-body">
+        <div class="card-title-row">
+          <h2 class="h5 mb-0">Blockchain Telemetry (Near Real-Time)</h2>
+          <span class="tag-chip info">Explainability</span>
+        </div>
+        <div class="row g-2 align-items-end mb-3">
+          <div class="col-md-3">
+            <label class="form-label" for="telemetryBlocks">Lookback Blocks</label>
+            <select id="telemetryBlocks" class="form-select">
+              <option value="200">200</option>
+              <option value="500" selected>500</option>
+              <option value="1000">1000</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <button id="refreshTelemetryBtn" class="btn btn-outline-primary">Refresh Telemetry</button>
+          </div>
+        </div>
+        <div id="telemetryMeta" class="task-meta mb-2">No telemetry loaded.</div>
+        <canvas id="telemetryChart" height="105"></canvas>
+      </div>
+    </section>
+
+    <section class="card shadow-sm surface-card mt-4">
+      <div class="card-body">
+        <div class="card-title-row">
+          <h2 class="h5 mb-0">Funds Movement Graph</h2>
+          <span class="tag-chip brand">Chain Events</span>
+        </div>
+        <div class="row g-2 align-items-end mb-3">
+          <div class="col-md-3">
+            <label class="form-label" for="fundsDays">Window</label>
+            <select id="fundsDays" class="form-select">
+              <option value="7">7 days</option>
+              <option value="14" selected>14 days</option>
+              <option value="30">30 days</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <button id="refreshFundsBtn" class="btn btn-outline-primary">Refresh Graph</button>
+          </div>
+        </div>
+        <canvas id="fundsChart" height="110"></canvas>
+      </div>
+    </section>
+
+    <section class="card shadow-sm surface-card mt-4">
+      <div class="card-body">
+        <div class="card-title-row">
           <h2 class="h5 mb-0">Recent Activity</h2>
           <span class="tag-chip info">Audit</span>
         </div>
         <div class="row g-2 align-items-end mb-3">
           <div class="col-md-5">
             <label class="form-label" for="auditStudentAddress">Filter by Student Address</label>
-            <input id="auditStudentAddress" class="form-control" placeholder="0x... (optional)" />
+            <select id="auditStudentAddress" class="form-select">
+              <option value="">All students</option>
+            </select>
           </div>
           <div class="col-md-2">
             <label class="form-label" for="auditPageSize">Page Size</label>
@@ -111,14 +202,18 @@
           <table class="table table-sm align-middle">
             <thead>
               <tr>
+                <th>ID</th>
                 <th>Type</th>
                 <th>Student</th>
                 <th>Tx Hash</th>
+                <th>Status</th>
+                <th>Note</th>
+                <th>Actions</th>
                 <th>Created At</th>
               </tr>
             </thead>
             <tbody id="auditRows">
-              <tr><td colspan="4" class="text-secondary">Use Refresh to load audit history.</td></tr>
+              <tr><td colspan="8" class="text-secondary">Use Refresh to load audit history.</td></tr>
             </tbody>
           </table>
         </div>
@@ -127,6 +222,7 @@
   </main>
 
   <script src="js/common.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
   <script src="js/admin-dashboard.js"></script>
 </body>
 </html>

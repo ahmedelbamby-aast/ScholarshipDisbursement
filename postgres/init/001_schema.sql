@@ -5,7 +5,9 @@ create table if not exists scholarship_approvals (
   amount_wei text not null,
   installments integer not null,
   claim_window_seconds integer not null,
-  tx_hash text not null
+  tx_hash text not null,
+  audit_status text not null default 'recorded',
+  audit_note text not null default ''
 );
 
 create table if not exists scholarship_releases (
@@ -13,8 +15,20 @@ create table if not exists scholarship_releases (
   created_at timestamp with time zone default now(),
   student_address text not null,
   installment_number integer not null,
-  tx_hash text not null
+  tx_hash text not null,
+  audit_status text not null default 'recorded',
+  audit_note text not null default ''
 );
+
+alter table scholarship_approvals
+  add column if not exists audit_status text not null default 'recorded';
+alter table scholarship_approvals
+  add column if not exists audit_note text not null default '';
+
+alter table scholarship_releases
+  add column if not exists audit_status text not null default 'recorded';
+alter table scholarship_releases
+  add column if not exists audit_note text not null default '';
 
 create index if not exists idx_scholarship_approvals_student_address
   on scholarship_approvals (student_address);

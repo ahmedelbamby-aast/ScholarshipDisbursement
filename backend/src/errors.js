@@ -21,4 +21,11 @@ class DependencyUnavailableError extends AppError {
   }
 }
 
-export { AppError, ValidationError, DependencyUnavailableError };
+class AuthorizationError extends AppError {
+  constructor(message) {
+    super(message, 403);
+    this.name = "AuthorizationError";
+  }
+}
+
+export { AppError, ValidationError, DependencyUnavailableError, AuthorizationError };

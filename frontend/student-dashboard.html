@@ -36,8 +36,10 @@
         <form id="claimForm" class="row g-3 mt-1">
           <div class="col-sm-6 col-md-4">
             <label class="form-label">Installment Number</label>
-            <input id="claimInstallmentNumber" type="number" min="1" class="form-control" required />
-            <small class="form-hint">Enter the released installment number you want to claim.</small>
+            <select id="claimInstallmentNumber" class="form-select" required>
+              <option value="">Connect wallet to load installments</option>
+            </select>
+            <small class="form-hint">Options are loaded from your on-chain scholarship state.</small>
           </div>
           <div class="col-12">
             <button type="submit" class="btn btn-dark">Claim</button>

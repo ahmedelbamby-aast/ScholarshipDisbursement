@@ -112,4 +112,53 @@ async function getAuditHistory({ page, pageSize, studentAddress }) {
   };
 }
 
-export { saveApprovalAudit, saveReleaseAudit, getAuditHistory };
+async function getAuditRowsForExport(limit = 5000) {
+  const pool = getPoolOrThrow();
+  const sqlApprovals = `
+    select id, created_at, student_address, tx_hash, audit_status, audit_note, 'approval'::text as type
+    from scholarship_approvals
+    order by created_at desc
+    limit $1
+  `;
+  const sqlReleases = `
+    select id, created_at, student_address, tx_hash, audit_status, audit_note, 'release'::text as type
+    from scholarship_releases
+    order by created_at desc
+    limit $1
+  `;
+
+  const [approvals, releases] = await Promise.all([
+    pool.query(sqlApprovals, [limit]),
+    pool.query(sqlReleases, [limit]),
+  ]);
+
+  return [...(approvals.rows || []), ...(releases.rows || [])].sort(
+    (a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+  );
+}
+
+async function updateAuditEntry(type, id, payload) {
+  const pool = getPoolOrThrow();
+  const table = type === "approval" ? "scholarship_approvals" : "scholarship_releases";
+  const sql = `
+    update ${table}
+    set audit_status = $1, audit_note = $2
+    where id = $3
+    returning *
+  `;
+
+  try {
+    const result = await pool.query(sql, [payload.auditStatus, payload.auditNote, id]);
+    if (!result.rowCount) {
+      throw new Error("Audit entry not found");
+    }
+    return result.rows[0];
+  } catch (error) {
+    if (error.message === "Audit entry not found") {
+      throw error;
+    }
+    throw new Error(`Audit update failed for ${table}`);
+  }
+}
+
+export { saveApprovalAudit, saveReleaseAudit, getAuditHistory, updateAuditEntry, getAuditRowsForExport };

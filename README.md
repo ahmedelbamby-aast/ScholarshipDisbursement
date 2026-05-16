@@ -64,11 +64,11 @@ npm run test:all
 
 ```bash
 docker compose build
-docker compose up -d
+docker compose --profile hardhat up -d
 docker compose ps
 ```
 
-What is auto-bootstrapped in Docker now:
+Hardhat profile auto-bootstraps:
 
 - `chain` service (dedicated image) starts local Ganache RPC (`8545`)
 - `deployer` service (dedicated image) waits for chain, deploys `ScholarshipApprovalRelease`, writes address to shared runtime volume
@@ -83,6 +83,13 @@ Services expose:
 - backend -> `http://localhost:4000` (`/api/health`)
 
 So after `docker compose up -d`, the stack is ready without manual blockchain/deployment steps.
+
+Sepolia profile:
+
+- use `docker compose up -d` (without `--profile hardhat`)
+- set `NETWORK_PROFILE=sepolia`
+- set `SEPOLIA_RPC_URL`, `SEPOLIA_ADMIN_PRIVATE_KEY`, `SEPOLIA_CONTRACT_ADDRESS`
+- `chain` and `deployer` services are not started in this mode
 
 ## Deployment Plan
 
@@ -132,6 +139,23 @@ So after `docker compose up -d`, the stack is ready without manual blockchain/de
   - `CHAIN_ID=31337`
   - `CONTRACT_ADDRESS` can be left empty in Docker (backend bootstrap auto-deploys and resolves from file)
   - `ADMIN_PRIVATE_KEY` defaults to Hardhat local dev key if omitted
+
+## Network Switching (Hardhat <-> Sepolia)
+
+Use `.env` only, no code changes required:
+
+1. Set `NETWORK_PROFILE=hardhat` or `NETWORK_PROFILE=sepolia`.
+2. Fill profile-specific vars:
+   - Hardhat: `HARDHAT_RPC_URL`, `HARDHAT_CHAIN_ID`, `HARDHAT_ADMIN_PRIVATE_KEY`, `HARDHAT_CONTRACT_ADDRESS`
+   - Sepolia: `SEPOLIA_RPC_URL`, `SEPOLIA_CHAIN_ID`, `SEPOLIA_ADMIN_PRIVATE_KEY`, `SEPOLIA_CONTRACT_ADDRESS`
+3. Keep generic keys (`RPC_URL`, `CHAIN_ID`, `ADMIN_PRIVATE_KEY`, `CONTRACT_ADDRESS`) as fallback only.
+
+Deploy commands:
+
+```bash
+npm run deploy:local
+npm run deploy:sepolia
+```
 
 ## Notes
 

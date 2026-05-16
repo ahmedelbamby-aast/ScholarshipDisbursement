@@ -18,6 +18,7 @@ services:
       start_period: 10s
 
   chain:
+    profiles: ["hardhat"]
     build:
       context: .
       dockerfile: chain/Dockerfile
@@ -37,14 +38,25 @@ services:
       start_period: 15s
 
   deployer:
+    profiles: ["hardhat"]
     build:
       context: .
       dockerfile: deployer/Dockerfile
     env_file:
       - .env
     environment:
+      NETWORK_PROFILE: ${NETWORK_PROFILE:-hardhat}
       CHAIN_RPC_URL: ${DOCKER_RPC_URL:-http://chain:8545}
+      RPC_URL: ${DOCKER_RPC_URL:-http://chain:8545}
       CHAIN_ID: ${CHAIN_ID:-31337}
+      HARDHAT_RPC_URL: ${DOCKER_RPC_URL:-http://chain:8545}
+      HARDHAT_CHAIN_ID: ${HARDHAT_CHAIN_ID:-31337}
+      HARDHAT_CONTRACT_ADDRESS: ${HARDHAT_CONTRACT_ADDRESS:-}
+      HARDHAT_ADMIN_PRIVATE_KEY: ${HARDHAT_ADMIN_PRIVATE_KEY:-}
+      SEPOLIA_RPC_URL: ${SEPOLIA_RPC_URL:-}
+      SEPOLIA_CHAIN_ID: ${SEPOLIA_CHAIN_ID:-11155111}
+      SEPOLIA_CONTRACT_ADDRESS: ${SEPOLIA_CONTRACT_ADDRESS:-}
+      SEPOLIA_ADMIN_PRIVATE_KEY: ${SEPOLIA_ADMIN_PRIVATE_KEY:-}
       CONTRACT_ADDRESS: ${CONTRACT_ADDRESS:-}
       CONTRACT_ADDRESS_FILE: /runtime/contract-address
       CONTRACT_METADATA_FILE: /runtime/contract-metadata.json
@@ -64,10 +76,19 @@ services:
     env_file:
       - .env
     environment:
+      NETWORK_PROFILE: ${NETWORK_PROFILE:-hardhat}
       PORT: ${PORT:-4000}
       RPC_URL: ${DOCKER_RPC_URL:-http://chain:8545}
       CHAIN_ID: ${CHAIN_ID:-31337}
-      CONTRACT_ADDRESS: ""
+      HARDHAT_RPC_URL: ${DOCKER_RPC_URL:-http://chain:8545}
+      HARDHAT_CHAIN_ID: ${HARDHAT_CHAIN_ID:-31337}
+      HARDHAT_CONTRACT_ADDRESS: ${HARDHAT_CONTRACT_ADDRESS:-}
+      HARDHAT_ADMIN_PRIVATE_KEY: ${HARDHAT_ADMIN_PRIVATE_KEY:-}
+      SEPOLIA_RPC_URL: ${SEPOLIA_RPC_URL:-}
+      SEPOLIA_CHAIN_ID: ${SEPOLIA_CHAIN_ID:-11155111}
+      SEPOLIA_CONTRACT_ADDRESS: ${SEPOLIA_CONTRACT_ADDRESS:-}
+      SEPOLIA_ADMIN_PRIVATE_KEY: ${SEPOLIA_ADMIN_PRIVATE_KEY:-}
+      CONTRACT_ADDRESS: ${CONTRACT_ADDRESS:-}
       CONTRACT_ADDRESS_FILE: /runtime/contract-address
       CONTRACT_METADATA_FILE: /runtime/contract-metadata.json
       ADMIN_PRIVATE_KEY: ${ADMIN_PRIVATE_KEY:-}
@@ -80,10 +101,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      chain:
-        condition: service_healthy
-      deployer:
-        condition: service_completed_successfully
 
   frontend:
     build:

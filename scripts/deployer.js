@@ -2,13 +2,19 @@ import fs from "node:fs";
 import path from "node:path";
 import solc from "solc";
 import { ethers } from "ethers";
+import { resolveNetworkConfig } from "../config/network-profile.js";
 
 const defaultPrivateKey =
   "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
 
-const chainRpcUrl = process.env.CHAIN_RPC_URL || process.env.DOCKER_RPC_URL || "http://chain:8545";
-const adminPrivateKey = process.env.ADMIN_PRIVATE_KEY || defaultPrivateKey;
-const explicitContractAddress = process.env.CONTRACT_ADDRESS || "";
+const network = resolveNetworkConfig(process.env);
+const chainRpcUrl =
+  process.env.CHAIN_RPC_URL ||
+  process.env.DOCKER_RPC_URL ||
+  network.rpcUrl ||
+  "http://chain:8545";
+const adminPrivateKey = network.adminPrivateKey || defaultPrivateKey;
+const explicitContractAddress = network.contractAddress || "";
 const outputPath = process.env.CONTRACT_ADDRESS_FILE || "/runtime/contract-address";
 const outputMetaPath = process.env.CONTRACT_METADATA_FILE || "/runtime/contract-metadata.json";
 const contractSourcePath = path.resolve(process.cwd(), "contracts/ScholarshipApprovalRelease.sol");
@@ -22,7 +28,8 @@ async function main() {
     writeContractMetadata({
       contractAddress: explicitContractAddress,
       rpcUrl: chainRpcUrl,
-      chainId: Number(process.env.CHAIN_ID || 31337),
+      chainId: network.chainId,
+      networkProfile: network.profile,
       source: "env",
     });
     console.log(`Using provided contract address: ${explicitContractAddress}`);
@@ -32,7 +39,7 @@ async function main() {
   const source = fs.readFileSync(contractSourcePath, "utf8");
   const { abi, bytecode } = compileContract(source);
 
-  const provider = new ethers.JsonRpcProvider(chainRpcUrl, Number(process.env.CHAIN_ID || 31337));
+  const provider = new ethers.JsonRpcProvider(chainRpcUrl, network.chainId);
   const wallet = new ethers.Wallet(adminPrivateKey, provider);
   const factory = new ethers.ContractFactory(abi, bytecode, wallet);
 
@@ -45,7 +52,8 @@ async function main() {
     contractAddress: deployedAddress,
     deployer: wallet.address,
     rpcUrl: chainRpcUrl,
-    chainId: Number(process.env.CHAIN_ID || 31337),
+    chainId: network.chainId,
+    networkProfile: network.profile,
     txHash: contract.deploymentTransaction()?.hash || "",
     source: "deployer",
   });

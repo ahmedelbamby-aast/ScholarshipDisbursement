@@ -1,9 +1,17 @@
 import {
   approveScholarship as approveOnChain,
+  getChainTelemetry as getChainTelemetryOnChain,
+  getFundsMovement as getFundsMovementOnChain,
   getApprovedStudents as getApprovedStudentsOnChain,
   releaseInstallment as releaseOnChain,
 } from "./contract-service.js";
-import { getAuditHistory, saveApprovalAudit, saveReleaseAudit } from "../repositories/audit-repository.js";
+import {
+  getAuditHistory,
+  saveApprovalAudit,
+  saveReleaseAudit,
+  updateAuditEntry,
+} from "../repositories/audit-repository.js";
+import { AppError } from "../errors.js";
 
 async function approveScholarship(payload, txTimeoutMs) {
   const { txHash } = await approveOnChain(payload, txTimeoutMs);
@@ -41,4 +49,31 @@ async function listAuditHistory(query) {
   return getAuditHistory(query);
 }
 
-export { approveScholarship, releaseInstallment, getApprovedStudents, listAuditHistory };
+async function editAuditEntry(type, id, payload) {
+  try {
+    return await updateAuditEntry(type, id, payload);
+  } catch (error) {
+    if (error.message === "Audit entry not found") {
+      throw new AppError("Audit entry not found", 404);
+    }
+    throw error;
+  }
+}
+
+async function getFundsMovement(days) {
+  return getFundsMovementOnChain(days);
+}
+
+async function getChainTelemetry(blocks) {
+  return getChainTelemetryOnChain(blocks);
+}
+
+export {
+  approveScholarship,
+  releaseInstallment,
+  getApprovedStudents,
+  listAuditHistory,
+  editAuditEntry,
+  getFundsMovement,
+  getChainTelemetry,
+};

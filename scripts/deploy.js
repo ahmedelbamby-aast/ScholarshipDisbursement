@@ -1,10 +1,10 @@
-import { network } from "hardhat";
+import hre from "hardhat";
 
 async function main() {
-  // Isolated ephemeral Hardhat network keeps deploy script side-effect free for local runs.
-  const { ethers } = await network.create();
+  const { ethers, network } = hre;
   const [deployer] = await ethers.getSigners();
-  console.log("Deploying with:", deployer.address);
+  console.log(`Deploying to network: ${network.name}`);
+  console.log(`Deploying with account: ${deployer.address}`);
 
   const Factory = await ethers.getContractFactory("ScholarshipApprovalRelease");
   const contract = await Factory.deploy(deployer.address);

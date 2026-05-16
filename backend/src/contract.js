@@ -9,6 +9,10 @@ const CONTRACT_ABI = [
   "function fundScholarship() payable",
   "function getScholarship(address student) view returns (tuple(bool approved,uint256 totalAmount,uint256 releasedAmount,uint256 claimedAmount,uint256 installments,uint256 releasedInstallments,uint256 claimedInstallments,uint256 claimWindowSeconds))",
   "function getApprovedStudents() view returns (address[])",
+  "function fundedBalance() view returns (uint256)",
+  "event ScholarshipFunded(address indexed funder,uint256 amount,uint256 fundedBalance)",
+  "event InstallmentReleased(address indexed student,uint256 installmentNumber,uint256 amount,uint256 claimDeadline)",
+  "event InstallmentClaimed(address indexed student,uint256 installmentNumber,uint256 amount)",
 ];
 
 function getContract() {
