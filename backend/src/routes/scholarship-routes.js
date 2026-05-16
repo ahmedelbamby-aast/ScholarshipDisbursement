@@ -15,8 +15,10 @@ import { parseAuditHistoryQuery, parseFundsMovementQuery, parseTelemetryQuery } 
 import { parseAuditUpdateParams, parseAuditUpdatePayload } from "../validators/audits.js";
 import { ROLES, requireRole } from "../middleware/role-auth.js";
 import { exportCsv, exportPdf, exportXlsx } from "../services/export-service.js";
+import { requireSession } from "../middleware/auth-session.js";
 
 const scholarshipRouter = Router();
+scholarshipRouter.use(requireSession);
 
 scholarshipRouter.post("/api/scholarships/approve", requireRole([ROLES.ADMIN]), async (req, res, next) => {
   try {

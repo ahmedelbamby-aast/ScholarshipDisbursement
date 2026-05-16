@@ -136,13 +136,13 @@ docker compose build
 Run containers (Hardhat):
 
 ```bash
-docker compose --profile hardhat up -d
+docker compose --profile hardhat up -d --build
 ```
 
 Run containers (Sepolia):
 
 ```bash
-docker compose up -d
+docker compose up -d --build
 ```
 
 For Sepolia mode set in `.env` before startup:

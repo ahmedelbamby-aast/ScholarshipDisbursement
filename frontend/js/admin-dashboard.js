@@ -25,15 +25,98 @@ const exportBlocks = document.getElementById("exportBlocks");
 const exportCsvBtn = document.getElementById("exportCsvBtn");
 const exportXlsxBtn = document.getElementById("exportXlsxBtn");
 const exportPdfBtn = document.getElementById("exportPdfBtn");
+const studentRows = document.getElementById("studentRows");
+const sessionBadge = document.getElementById("sessionBadge");
+const logoutBtn = document.getElementById("logoutBtn");
 
 let fundsChart = null;
 let telemetryChart = null;
 let telemetryTimer = null;
 
 const auditState = { page: 1 };
+const ADMIN_UI_STATE_KEY = "scholarship_admin_ui_state";
+
+function enforceAdminAreaSession() {
+  const session = window.FrontendUtils.getSession();
+  const role = session.user?.role || "";
+  if (!session.token || (role !== "admin" && role !== "auditor")) {
+    window.location.href = "admin-login.html";
+    return false;
+  }
+  if (roleSelect) {
+    roleSelect.value = role;
+    roleSelect.disabled = true;
+  }
+  if (sessionBadge) {
+    sessionBadge.textContent = `${session.user?.fullName || session.user?.email || "User"} (${role})`;
+  }
+  return true;
+}
+
+function saveUiState() {
+  const state = {
+    role: roleSelect?.value || "admin",
+    approve: {
+      studentAddress: document.getElementById("studentAddress")?.value || "",
+      amountWei: document.getElementById("amountWei")?.value || "",
+      installments: document.getElementById("installments")?.value || "2",
+      claimWindowSeconds: document.getElementById("claimWindowSeconds")?.value || "86400",
+    },
+    release: {
+      studentAddress: releaseStudentAddress?.value || "",
+      installmentNumber: document.getElementById("installmentNumber")?.value || "",
+    },
+    audit: {
+      studentAddress: auditStudentAddress?.value || "",
+      pageSize: auditPageSize?.value || "10",
+      page: auditState.page || 1,
+    },
+    fundsDays: fundsDays?.value || "14",
+    telemetryBlocks: telemetryBlocks?.value || "500",
+    exportBlocks: exportBlocks?.value || "1000",
+  };
+  localStorage.setItem(ADMIN_UI_STATE_KEY, JSON.stringify(state));
+}
+
+function restoreUiState() {
+  try {
+    const raw = localStorage.getItem(ADMIN_UI_STATE_KEY);
+    if (!raw) {
+      return;
+    }
+    const state = JSON.parse(raw);
+    if (state.role && roleSelect) roleSelect.value = state.role;
+    if (state.approve) {
+      const a = state.approve;
+      if (document.getElementById("studentAddress")) document.getElementById("studentAddress").value = a.studentAddress || "";
+      if (document.getElementById("amountWei")) document.getElementById("amountWei").value = a.amountWei || "";
+      if (document.getElementById("installments")) document.getElementById("installments").value = a.installments || "2";
+      if (document.getElementById("claimWindowSeconds")) document.getElementById("claimWindowSeconds").value = a.claimWindowSeconds || "86400";
+    }
+    if (state.release) {
+      if (document.getElementById("installmentNumber")) document.getElementById("installmentNumber").value = state.release.installmentNumber || "";
+    }
+    if (state.audit) {
+      if (auditPageSize) auditPageSize.value = state.audit.pageSize || "10";
+      auditState.page = Number(state.audit.page || 1);
+    }
+    if (state.fundsDays && fundsDays) fundsDays.value = state.fundsDays;
+    if (state.telemetryBlocks && telemetryBlocks) telemetryBlocks.value = state.telemetryBlocks;
+    if (state.exportBlocks && exportBlocks) exportBlocks.value = state.exportBlocks;
+  } catch (_error) {
+    // Ignore malformed persisted state.
+  }
+}
 
 function getRole() { return roleSelect?.value || "admin"; }
-function apiHeaders(extra = {}) { return { "Content-Type": "application/json", "x-user-role": getRole(), ...extra }; }
+function apiHeaders(extra = {}) {
+  return {
+    "Content-Type": "application/json",
+    ...window.FrontendUtils.getAuthHeaders(),
+    "x-user-role": getRole(),
+    ...extra,
+  };
+}
 function showAlert(message, isSuccess) { window.FrontendUtils.showAlert(alertBox, message, isSuccess); }
 function shortHash(hash) { return !hash || hash.length < 12 ? (hash || "-") : `${hash.slice(0, 8)}...${hash.slice(-6)}`; }
 function toEth(weiValue) { return Number(BigInt(weiValue || "0")) / 1e18; }
@@ -59,7 +142,7 @@ async function exportFile(kind, button) {
   try {
     const blocks = Number(exportBlocks.value || 1000);
     const response = await fetch(`${runtime.apiBase}/api/exports/transactions.${kind}?blocks=${blocks}`, {
-      headers: { "x-user-role": getRole() },
+      headers: apiHeaders(),
     });
     if (!response.ok) {
       const body = await window.FrontendUtils.readJson(response);
@@ -169,13 +252,54 @@ function mergeAuditRows(approvals, releases) {
 
 async function loadApprovedStudents() {
   try {
-    const response = await fetch(`${runtime.apiBase}/api/scholarships/approved`, { headers: apiHeaders() });
+    let persisted = {};
+    try {
+      persisted = JSON.parse(localStorage.getItem(ADMIN_UI_STATE_KEY) || "{}");
+    } catch (_error) {
+      persisted = {};
+    }
+    const response = await fetch(`${runtime.apiBase}/api/users/students`, { headers: apiHeaders() });
     const data = await window.FrontendUtils.readJson(response);
     if (!response.ok) throw new Error(data.error || "Failed to load approved students");
-    const students = data.students || [];
-    releaseStudentAddress.innerHTML = ['<option value="">Select approved student</option>', ...students.map((a) => `<option value="${a}">${a}</option>`)].join("");
-    auditStudentAddress.innerHTML = ['<option value="">All students</option>', ...students.map((a) => `<option value="${a}">${a}</option>`)].join("");
+    const students = (data.students || []).filter((item) => item.is_verified && item.wallet_address);
+    if (!students.length) {
+      releaseStudentAddress.innerHTML = '<option value="">No students registered</option>';
+      auditStudentAddress.innerHTML = '<option value="">No students registered</option>';
+      studentRows.innerHTML = '<tr><td colspan="6" class="text-secondary">No students registered.</td></tr>';
+      return;
+    }
+    releaseStudentAddress.innerHTML = ['<option value="">Select verified student</option>', ...students.map((s) => `<option value="${s.wallet_address}">${s.full_name} (${s.wallet_address})</option>`)].join("");
+    auditStudentAddress.innerHTML = ['<option value="">All students</option>', ...students.map((s) => `<option value="${s.wallet_address}">${s.full_name}</option>`)].join("");
+    if (persisted.release?.studentAddress) {
+      releaseStudentAddress.value = persisted.release.studentAddress;
+    }
+    if (persisted.audit?.studentAddress) {
+      auditStudentAddress.value = persisted.audit.studentAddress;
+    }
+    studentRows.innerHTML = students.map((s) => `<tr>
+      <td>${s.id}</td>
+      <td>${s.full_name}</td>
+      <td>${s.email}</td>
+      <td><code>${s.wallet_address || "-"}</code></td>
+      <td>${s.is_verified ? "yes" : "no"}</td>
+      <td>${s.is_verified ? '<span class="text-secondary">Verified</span>' : `<button class="btn btn-sm btn-outline-primary" data-verify-student="${s.id}">Verify</button>`}</td>
+    </tr>`).join("");
   } catch (error) { showAlert(error.message || "Failed to load approved students", false); }
+}
+
+async function verifyStudent(studentId) {
+  try {
+    const response = await fetch(`${runtime.apiBase}/api/users/students/${studentId}/verify`, {
+      method: "PATCH",
+      headers: apiHeaders(),
+    });
+    const data = await window.FrontendUtils.readJson(response);
+    if (!response.ok) throw new Error(data.error || "Student verification failed");
+    showAlert(`Student #${studentId} verified`, true);
+    await loadApprovedStudents();
+  } catch (error) {
+    showAlert(error.message || "Student verification failed", false);
+  }
 }
 
 async function loadAuditHistory() {
@@ -268,6 +392,7 @@ exportXlsxBtn.addEventListener("click", () => exportFile("xlsx", exportXlsxBtn))
 exportPdfBtn.addEventListener("click", () => exportFile("pdf", exportPdfBtn));
 roleSelect.addEventListener("change", async () => {
   setRoleUiState();
+  saveUiState();
   await loadApprovedStudents();
   await Promise.all([loadAuditHistory(), loadFundsMovement(), loadTelemetry()]);
 });
@@ -275,8 +400,35 @@ auditRows.addEventListener("click", (event) => {
   const button = event.target.closest("button[data-save-audit]");
   if (button) saveAuditEdit(button);
 });
+studentRows.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-verify-student]");
+  if (button) verifyStudent(button.dataset.verifyStudent);
+});
 
 setRoleUiState();
-loadApprovedStudents().then(() => Promise.all([loadAuditHistory(), loadFundsMovement(), loadTelemetry()]));
+if (enforceAdminAreaSession()) {
+  restoreUiState();
+  setRoleUiState();
+  loadApprovedStudents().then(() => Promise.all([loadAuditHistory(), loadFundsMovement(), loadTelemetry()]));
+}
 if (telemetryTimer) clearInterval(telemetryTimer);
 telemetryTimer = setInterval(loadTelemetry, 8000);
+
+[
+  "studentAddress",
+  "amountWei",
+  "installments",
+  "claimWindowSeconds",
+  "installmentNumber",
+].forEach((id) => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener("input", saveUiState);
+});
+[releaseStudentAddress, auditStudentAddress, auditPageSize, fundsDays, telemetryBlocks, exportBlocks].forEach((el) => {
+  if (el) el.addEventListener("change", saveUiState);
+});
+window.addEventListener("beforeunload", saveUiState);
+logoutBtn?.addEventListener("click", () => {
+  window.FrontendUtils.clearSession();
+  window.location.href = "admin-login.html";
+});

@@ -6,12 +6,16 @@
   <title>Admin Dashboard</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="css/app.css" rel="stylesheet" />
-</head>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" /></head>
 <body class="bg-light page-shell">
   <main class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h1 class="h3 mb-0">Admin Dashboard</h1>
-      <a href="index.html" class="btn btn-outline-secondary btn-sm">Back</a>
+      <div class="d-flex gap-2">
+        <span id="sessionBadge" class="badge text-bg-light border">Not logged in</span>
+        <button id="logoutBtn" class="btn btn-outline-danger btn-sm">Logout</button>
+        <a href="index.html" class="btn btn-outline-secondary btn-sm">Back</a>
+      </div>
     </div>
     <div class="row g-2 mb-3">
       <div class="col-sm-4 col-md-3">
@@ -48,8 +52,15 @@
               </div>
               <div class="col-md-6">
                 <label class="form-label">Installments</label>
-                <input id="installments" type="number" min="1" class="form-control" value="2" required />
-                <small class="form-hint">How many parts the total award should be split into.</small>
+                <select id="installments" class="form-select" required>
+                  <option value="1">1 installment</option>
+                  <option value="2" selected>2 installments</option>
+                  <option value="3">3 installments</option>
+                  <option value="4">4 installments</option>
+                  <option value="6">6 installments</option>
+                  <option value="12">12 installments</option>
+                </select>
+                <small class="form-hint">Preset installment counts reduce admin input mistakes.</small>
               </div>
               <div class="col-md-6">
                 <label class="form-label">Claim Window (seconds)</label>
@@ -97,6 +108,33 @@
         </section>
       </div>
     </div>
+
+    <section class="card shadow-sm surface-card mt-4">
+      <div class="card-body">
+        <div class="card-title-row">
+          <h2 class="h5 mb-0">Student Verification</h2>
+          <span class="tag-chip info">Admin Control</span>
+        </div>
+        <p class="task-meta">Students must be verified before they can login with MetaMask.</p>
+        <div class="table-responsive mb-2">
+          <table class="table table-sm">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Wallet</th>
+                <th>Verified</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="studentRows">
+              <tr><td colspan="6" class="text-secondary">Load student records to verify.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
 
     <section class="card shadow-sm surface-card mt-4">
       <div class="card-body">

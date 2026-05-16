@@ -47,3 +47,33 @@ create index if not exists idx_scholarship_releases_created_at
 
 create unique index if not exists uq_scholarship_releases_tx_hash
   on scholarship_releases (tx_hash);
+
+create table if not exists app_users (
+  id bigint generated always as identity primary key,
+  created_at timestamp with time zone default now(),
+  full_name text not null,
+  email text not null unique,
+  password_hash text not null,
+  role text not null check (role in ('admin','student','auditor')),
+  wallet_address text,
+  is_verified boolean not null default false,
+  verified_at timestamp with time zone
+);
+
+create table if not exists app_sessions (
+  id bigint generated always as identity primary key,
+  created_at timestamp with time zone default now(),
+  user_id bigint not null references app_users(id) on delete cascade,
+  session_token text not null unique,
+  expires_at timestamp with time zone not null
+);
+
+create table if not exists app_wallet_nonces (
+  wallet_address text primary key,
+  nonce text not null,
+  expires_at timestamp with time zone not null
+);
+
+insert into app_users (full_name, email, password_hash, role, is_verified)
+values ('Initial Admin', 'admin@scholar.local', 'plain:admin123', 'admin', true)
+on conflict (email) do nothing;

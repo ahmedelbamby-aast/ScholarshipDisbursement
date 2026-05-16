@@ -3,6 +3,7 @@ import cors from "cors";
 import helmet from "helmet";
 import healthRouter from "./routes/health-routes.js";
 import scholarshipRouter from "./routes/scholarship-routes.js";
+import authRouter from "./routes/auth-routes.js";
 import { requestContext } from "./middleware/request-context.js";
 import { requestLogger } from "./middleware/request-logger.js";
 import { errorHandler } from "./middleware/error-handler.js";
@@ -19,6 +20,7 @@ app.use(requestLogger);
 
 // Route order is explicit; error handler must remain last.
 app.use(healthRouter);
+app.use(authRouter);
 app.use(scholarshipRouter);
 app.use(errorHandler);
 

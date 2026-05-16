@@ -1,6 +1,7 @@
 services:
   postgres:
     image: postgres:16-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-scholarship}
       POSTGRES_USER: ${POSTGRES_USER:-scholarship}
@@ -19,6 +20,7 @@ services:
 
   chain:
     profiles: ["hardhat"]
+    restart: unless-stopped
     build:
       context: .
       dockerfile: chain/Dockerfile
@@ -70,12 +72,14 @@ services:
     restart: "no"
 
   backend:
+    restart: unless-stopped
     build:
       context: .
       dockerfile: backend/Dockerfile
     env_file:
       - .env
     environment:
+      NODE_ENV: production
       NETWORK_PROFILE: ${NETWORK_PROFILE:-hardhat}
       PORT: ${PORT:-4000}
       RPC_URL: ${DOCKER_RPC_URL:-http://chain:8545}
@@ -103,10 +107,12 @@ services:
         condition: service_healthy
 
   frontend:
+    restart: unless-stopped
     build:
       context: .
       dockerfile: Dockerfile
     environment:
+      NODE_ENV: production
       FRONTEND_PORT: 3300
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3300/health"]

@@ -15,7 +15,7 @@ function parseRole(headerValue) {
 
 function requireRole(allowedRoles) {
   return (req, _res, next) => {
-    const role = parseRole(req.header("x-user-role"));
+    const role = parseRole(req.context?.authUser?.role || req.header("x-user-role"));
     if (!allowedRoles.includes(role)) {
       return next(new AuthorizationError("Forbidden for this role"));
     }
