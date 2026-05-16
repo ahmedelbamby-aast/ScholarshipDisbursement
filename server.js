@@ -1,3 +1,17 @@
+/**
+ * Static frontend server entrypoint.
+ *
+ * Responsibilities:
+ * - Serves `frontend/` assets over Express static middleware.
+ * - Exposes lightweight `/health` endpoint for compose health checks.
+ *
+ * Execution context:
+ * - Used by local/dev and Docker frontend container runtime.
+ *
+ * Security/performance notes:
+ * - No server-side templating/state; this is static asset delivery only.
+ * - API calls are made client-side to backend service.
+ */
 import express from "express";
 import path from "node:path";
 import { fileURLToPath } from "node:url";

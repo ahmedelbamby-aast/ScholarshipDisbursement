@@ -1,3 +1,13 @@
+/**
+ * Hardhat CLI wrapper.
+ *
+ * Responsibilities:
+ * - Launches local project hardhat CLI with inherited stdio.
+ * - Overrides `LOCALAPPDATA` so Hardhat v3 cache paths remain project-scoped on Windows.
+ *
+ * Why this exists:
+ * - Avoids host-global cache/path collisions in multi-project environments.
+ */
 import { spawn } from "node:child_process";
 import path from "node:path";
 import process from "node:process";

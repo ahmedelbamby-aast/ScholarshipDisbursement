@@ -1,3 +1,10 @@
+/**
+ * Hardhat deploy script (network selected by hardhat runner flags).
+ *
+ * Responsibilities:
+ * - Deploys `ScholarshipApprovalRelease` using current signer as contract owner/admin.
+ * - Waits for deployment confirmation and logs resulting address.
+ */
 import hre from "hardhat";
 
 async function main() {

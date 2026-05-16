@@ -1,3 +1,13 @@
+/**
+ * Backend API contract tests.
+ *
+ * Scope:
+ * - Validates core route contracts for health, validation, dependency errors, and RBAC boundaries.
+ *
+ * Notes:
+ * - Uses app instance directly (no network bind) via supertest.
+ * - Some tests intentionally rely on absent DB config to assert deterministic 503 behavior.
+ */
 import request from "supertest";
 import { expect } from "chai";
 

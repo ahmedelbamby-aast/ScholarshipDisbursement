@@ -1,3 +1,11 @@
+-- Initial PostgreSQL schema bootstrap for scholarship system.
+--
+-- Responsibilities:
+-- - Create audit tables for on-chain approval/release traceability.
+-- - Create identity/session/nonce tables for app authentication.
+-- - Add backward-compatible ALTER statements for existing deployments.
+-- - Seed initial admin account for first-time access.
+
 create table if not exists scholarship_approvals (
   id bigint generated always as identity primary key,
   created_at timestamp with time zone default now(),
@@ -20,6 +28,7 @@ create table if not exists scholarship_releases (
   audit_note text not null default ''
 );
 
+-- Backward-compatible column migrations for environments created before audit editor feature.
 alter table scholarship_approvals
   add column if not exists audit_status text not null default 'recorded';
 alter table scholarship_approvals
@@ -74,6 +83,8 @@ create table if not exists app_wallet_nonces (
   expires_at timestamp with time zone not null
 );
 
+-- Bootstrap admin: password is plain-prefixed for initial setup compatibility;
+-- runtime auth service supports plain+hashed formats.
 insert into app_users (full_name, email, password_hash, role, is_verified)
 values ('Initial Admin', 'admin@scholar.local', 'plain:admin123', 'admin', true)
 on conflict (email) do nothing;

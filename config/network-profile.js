@@ -1,3 +1,14 @@
+/**
+ * Network profile resolution helper.
+ *
+ * Responsibilities:
+ * - Normalizes selected runtime profile (`hardhat` or `sepolia`).
+ * - Resolves profile-scoped RPC URL/chainId/contract/private-key values.
+ * - Provides deterministic fallbacks for local development.
+ *
+ * Integration:
+ * - Consumed by backend config loader, deploy scripts, and hardhat config.
+ */
 const SUPPORTED_PROFILES = new Set(["hardhat", "sepolia"]);
 
 function toNumber(value, fallback) {
@@ -14,6 +25,7 @@ function resolveNetworkConfig(env) {
   const profile = resolveNetworkProfile(env.NETWORK_PROFILE);
   const upper = profile.toUpperCase();
 
+  // Profile-specific vars take precedence over generic vars to enable seamless switching.
   const rpcUrl =
     env[`${upper}_RPC_URL`] ||
     env.RPC_URL ||

@@ -1,3 +1,10 @@
+/**
+ * Frontend static page presence tests.
+ *
+ * Scope:
+ * - Guards critical UI text/navigation anchors against accidental regressions.
+ * - Validates key registration page elements required by role onboarding.
+ */
 import { expect } from "chai";
 import fs from "node:fs";
 import path from "node:path";

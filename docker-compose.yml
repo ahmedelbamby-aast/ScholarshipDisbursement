@@ -1,3 +1,14 @@
+# Docker Compose topology for ScholarshipDisbursement.
+# 
+# Responsibilities:
+# - Boots postgres/backend/frontend in all profiles.
+# - Boots local chain + deployer only in `hardhat` profile.
+# - Shares deployed contract metadata/address through `runtime_data` volume.
+# 
+# Operational behavior:
+# - backend waits for postgres health before startup.
+# - frontend waits for backend health.
+# - deployer waits for chain health and writes runtime artifacts consumed by backend.
 services:
   postgres:
     image: postgres:16-alpine

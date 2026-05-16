@@ -1,3 +1,10 @@
+/**
+ * Security authorization boundary tests.
+ *
+ * Scope:
+ * - Confirms non-admin roles cannot access privileged export/verification actions.
+ * - Confirms protected routes reject missing auth context.
+ */
 import request from "supertest";
 import { expect } from "chai";
 import app from "../../backend/src/app.js";

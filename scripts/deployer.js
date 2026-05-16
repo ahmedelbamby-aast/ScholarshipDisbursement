@@ -1,3 +1,14 @@
+/**
+ * Container-friendly standalone deployer/bootstrap script.
+ *
+ * Responsibilities:
+ * - Waits for RPC readiness to avoid startup race conditions.
+ * - Either reuses explicit contract address or compiles+deploys contract with solc+ethers.
+ * - Writes contract address and metadata files consumed by backend runtime.
+ *
+ * Failure behavior:
+ * - Exits non-zero on compilation, RPC, or deployment failures.
+ */
 import fs from "node:fs";
 import path from "node:path";
 import solc from "solc";
@@ -81,6 +92,7 @@ function compileContract(sourceCode) {
     },
   };
 
+  // Native solc compile call allows deployment without hardhat runtime in container.
   const output = JSON.parse(solc.compile(JSON.stringify(input)));
 
   if (output.errors) {

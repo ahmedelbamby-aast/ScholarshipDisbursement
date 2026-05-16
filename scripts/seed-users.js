@@ -1,3 +1,14 @@
+/**
+ * Sample user data seeding script.
+ *
+ * Responsibilities:
+ * - Inserts deterministic demo students/auditors into `app_users`.
+ * - Hashes passwords using same scrypt format as runtime auth service.
+ * - Generates unique email suffix and wallet addresses for repeatable runs.
+ *
+ * Security note:
+ * - This script is for demo/testing; generated credentials are intentionally printed.
+ */
 import crypto from "node:crypto";
 import { Pool } from "pg";
 import { ethers } from "ethers";

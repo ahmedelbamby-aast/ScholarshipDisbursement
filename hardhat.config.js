@@ -1,3 +1,15 @@
+/**
+ * Hardhat v3 configuration.
+ *
+ * Responsibilities:
+ * - Registers hardhat plugins used by tests/deploy workflows.
+ * - Resolves docker and optional sepolia network definitions from env/profile.
+ * - Defines compiler and project path settings.
+ *
+ * Operational note:
+ * - `sepolia` network is conditionally registered only when RPC URL is provided,
+ *   preventing accidental remote-network attempts in local-only setups.
+ */
 import hardhatEthers from "@nomicfoundation/hardhat-ethers";
 import hardhatEthersChaiMatchers from "@nomicfoundation/hardhat-ethers-chai-matchers";
 import hardhatMocha from "@nomicfoundation/hardhat-mocha";
