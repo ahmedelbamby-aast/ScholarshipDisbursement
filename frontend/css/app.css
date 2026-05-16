@@ -146,6 +146,52 @@ body {
   cursor: not-allowed;
 }
 
+.auth-actions .auth-action-btn {
+  color: #f8fafc;
+  border-width: 1px;
+  border-style: solid;
+  font-weight: 600;
+}
+
+.auth-actions .auth-action-btn.auth-admin {
+  background-color: #2563eb;
+  border-color: #2563eb;
+}
+
+.auth-actions .auth-action-btn.auth-admin:hover,
+.auth-actions .auth-action-btn.auth-admin:focus {
+  background-color: #1d4ed8;
+  border-color: #1d4ed8;
+  color: #f8fafc;
+  box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.28);
+}
+
+.auth-actions .auth-action-btn.auth-auditor {
+  background-color: #7c3aed;
+  border-color: #7c3aed;
+}
+
+.auth-actions .auth-action-btn.auth-auditor:hover,
+.auth-actions .auth-action-btn.auth-auditor:focus {
+  background-color: #6d28d9;
+  border-color: #6d28d9;
+  color: #f8fafc;
+  box-shadow: 0 0 0 0.2rem rgba(124, 58, 237, 0.28);
+}
+
+.auth-actions .auth-action-btn.auth-student {
+  background-color: #14b8a6;
+  border-color: #14b8a6;
+}
+
+.auth-actions .auth-action-btn.auth-student:hover,
+.auth-actions .auth-action-btn.auth-student:focus {
+  background-color: #0f766e;
+  border-color: #0f766e;
+  color: #f8fafc;
+  box-shadow: 0 0 0 0.2rem rgba(20, 184, 166, 0.28);
+}
+
 .wallet-pill {
   display: inline-block;
   margin-top: 0.75rem;

@@ -150,3 +150,35 @@ sequenceDiagram
   Reader->>Document: Open and read
   Document-->>Reader: Render documented content
 ```
+
+## How this feature implemented ?
+
+### 1. Feature Overview
+This markdown describes implemented repository behavior and links to source-backed docs under `docs/`.
+
+### 2. Entry Points
+```mermaid
+flowchart TD
+  Reader --> Markdown
+  Markdown --> SourceDocs[docs/*.md]
+  SourceDocs --> SourceCode[src/contracts/frontend]
+```
+#### Diagram Explanation
+This file is documentation-level entry. Technical entry points are in referenced implementation docs and source files.
+
+### 3. Internal Execution Flow
+Behavior unclear from current codebase in this documentation-only artifact; execution details live in implementation files.
+
+```mermaid
+sequenceDiagram
+  participant Engineer
+  participant Doc
+  participant Code
+  Engineer->>Doc: Read guidance
+  Engineer->>Code: Verify implementation
+```
+#### Diagram Explanation
+Expected verification workflow from documentation to code.
+
+### 4-14
+Implementation not found directly in this documentation artifact; use implementation-specific docs in `docs/` for full architecture, data flow, lifecycle, error handling, security, performance, tradeoffs, and risk analysis.

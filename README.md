@@ -182,3 +182,72 @@ sequenceDiagram
   Reader->>Document: Open and read
   Document-->>Reader: Render documented content
 ```
+
+## How this feature implemented ?
+
+### 1. Feature Overview
+This repository implements a scholarship disbursement system with Express backend, static frontend, PostgreSQL audit/auth storage, and Solidity smart contract execution.
+
+### 2. Entry Points
+```mermaid
+flowchart TD
+  User --> Frontend
+  Frontend --> Backend
+  Backend --> PostgreSQL
+  Backend --> EVM
+  Student --> MetaMask --> EVM
+```
+#### Diagram Explanation
+Represents real implemented runtime flows from `frontend/js/*`, `backend/src/*`, DB schema, and contract file.
+
+### 3. Internal Execution Flow
+API requests are validated, session/role checked, delegated to services, then persisted to DB and/or chain.
+
+### 4. Architecture & Component Relationships
+See detailed docs in `docs/backend.md`, `docs/frontend.md`, `docs/database.md`, `docs/contracts.md`, `docs/cross-interactions.md`.
+
+### 5. Data Flow
+Request payloads -> validators -> services -> repositories/contract calls -> response payloads/exports.
+
+### 6. Feature Lifecycle
+Startup via npm/docker, runtime requests and wallet actions, shutdown through process/container stop.
+
+### 7. Interactions With Other Features/Services
+Admin, auditor, and student role paths share auth/session system and read/write common audit/telemetry surfaces.
+
+### 8. Use Cases
+Admin approve/release/export/verify, auditor monitor, student register+claim.
+
+### 9. Edge Cases
+Invalid payloads, expired sessions, unavailable DB/RPC, wrong wallet chain.
+
+### 10. Error Handling & Recovery
+Express error middleware returns structured errors; on-chain failures revert; frontend displays status/errors.
+
+### 11. Security Considerations
+Session token auth + RBAC + wallet signature login are implemented. Additional hardening opportunities are documented in `docs/assumptions-limitations.md`.
+
+### 12. Performance & Scalability
+Pagination and bounded telemetry windows are implemented. No distributed cache or queue layer found.
+
+### 13. Pros / Cons / Tradeoffs
+Pros: explainable, auditable, split on-chain/off-chain responsibilities. Cons: consistency across chain and DB requires operational care.
+
+### 14. Known Blockers / Risks
+Implementation not found: production-grade orchestration, distributed tracing, async reconciliation worker.
+
+```mermaid
+sequenceDiagram
+  participant U as User
+  participant FE as Frontend
+  participant BE as Backend
+  participant DB as PostgreSQL
+  participant CH as Contract
+  U->>FE: action
+  FE->>BE: API call
+  BE->>DB: read/write
+  BE->>CH: tx/read
+  BE-->>FE: response
+```
+#### Diagram Explanation
+High-level repository interaction sequence; detailed per-feature sequence exists in docs folder.

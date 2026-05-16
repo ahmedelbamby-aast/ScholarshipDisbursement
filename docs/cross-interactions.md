@@ -85,3 +85,82 @@ sequenceDiagram
   Reader->>Document: Open and read
   Document-->>Reader: Render documented content
 ```
+
+## How this feature implemented ?
+
+### 1. Feature Overview
+Cross-system behavior is implemented through frontend fetch/wallet calls, backend Express APIs, PostgreSQL repositories, and on-chain contract calls.
+
+### 2. Entry Points
+```mermaid
+flowchart TD
+  AdminUI --> BackendAPI
+  StudentUI --> BackendAPI
+  StudentUI --> MetaMask
+  MetaMask --> Contract
+  BackendAPI --> Contract
+  BackendAPI --> PostgreSQL
+```
+#### Diagram Explanation
+Shows actual runtime entry points and data directions from implemented code.
+
+### 3. Internal Execution Flow
+Admin write flow: UI -> `/api/scholarships/approve|release` -> service -> contract tx -> audit insert. Student claim flow: UI -> MetaMask signer -> `claimInstallment`.
+
+### 4. Architecture & Component Relationships
+```mermaid
+flowchart LR
+  FE[frontend/js/*] --> API[backend/src/routes/*]
+  API --> SVC[backend/src/services/*]
+  SVC --> REPO[backend/src/repositories/*]
+  SVC --> CHAIN[backend/src/services/contract-service.js]
+  REPO --> DB[(PostgreSQL)]
+  CHAIN --> RPC[EVM RPC]
+```
+#### Diagram Explanation
+Reflects import and call-chain boundaries in code.
+
+### 5. Data Flow
+Session token and role travel from frontend localStorage to backend headers; DB persists auth/audit state; chain stores authoritative scholarship execution state.
+
+### 6. Feature Lifecycle
+Startup from Docker or local npm scripts, then continuous API and wallet interactions.
+
+### 7. Interactions With Other Features/Services
+Strong coupling points: backend config (`NETWORK_PROFILE`), contract address provisioning, session auth middleware, export service combining DB and chain telemetry.
+
+### 8. Use Cases
+Admin disbursement, auditor monitoring, student claims, admin export.
+
+### 9. Edge Cases
+RPC down, DB down, missing contract address, stale frontend session.
+
+### 10. Error Handling & Recovery
+APIs normalize errors; frontend surfaces status; contract reverts rollback on-chain writes.
+
+### 11. Security Considerations
+Role enforcement in backend middleware; student claim requires wallet key ownership.
+
+### 12. Performance & Scalability
+Windowed telemetry/history queries; chart polling interval on frontend.
+
+### 13. Pros / Cons / Tradeoffs
+Pros: clear separation between on-chain and off-chain concerns. Cons: two-state consistency management required (chain + DB).
+
+### 14. Known Blockers / Risks
+Implementation not found: event queue or eventual-consistency reconciler between chain and DB.
+
+```mermaid
+sequenceDiagram
+  participant A as Admin UI
+  participant B as Backend
+  participant C as Contract
+  participant D as DB
+  A->>B: POST approve/release
+  B->>C: send tx
+  C-->>B: tx hash receipt
+  B->>D: insert audit row
+  B-->>A: ok + txHash
+```
+#### Diagram Explanation
+Actual ordering from `scholarship-service.js` ensures DB record writes after chain confirmation path.

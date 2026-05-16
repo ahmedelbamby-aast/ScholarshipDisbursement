@@ -320,3 +320,39 @@ flowchart LR
   - wait and rerun (interrupted runs can leave transient locks)
   - avoid running multiple Hardhat test/compile commands in parallel
   - run tests sequentially (feature tests first, then integration/system)
+
+## How this feature implemented ?
+
+### 1. Feature Overview
+Quickstart commands operate existing Docker/npm runtime wiring; they do not define application logic.
+
+### 2. Entry Points
+`docker compose up` and `npm` scripts are the operational triggers.
+
+```mermaid
+flowchart TD
+  QuickstartCmd --> DockerCompose
+  QuickstartCmd --> NpmScripts
+```
+#### Diagram Explanation
+Operational entry points map to compose and package scripts currently present.
+
+### 3. Internal Execution Flow
+Behavior unclear from current codebase: this document is procedural. Implementation details are in compose and script files.
+
+### 4. Architecture & Component Relationships
+References: `docker-compose.yml`, `package.json`, `backend/src/config.js`, `hardhat.config.js`.
+
+### 5-14
+Implementation not found in this markdown itself; authoritative technical behavior is documented in `docs/*.md` and source code.
+
+```mermaid
+sequenceDiagram
+  participant Dev
+  participant Docs
+  participant Runtime
+  Dev->>Docs: follow quickstart commands
+  Dev->>Runtime: start services
+```
+#### Diagram Explanation
+Represents procedural use of this guide.
