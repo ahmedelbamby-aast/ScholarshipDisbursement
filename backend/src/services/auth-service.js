@@ -1,3 +1,17 @@
+/**
+ * Authentication domain service.
+ *
+ * Responsibilities:
+ * - Password hashing/verification and account login orchestration.
+ * - Session issuance and session lookups.
+ * - Wallet nonce challenge issuance and signature login validation.
+ * - User verification workflows used by admin operations.
+ *
+ * Security considerations:
+ * - Uses scrypt with per-user random salt for new registrations.
+ * - Supports legacy `plain:` seeded password format for bootstrap admin account.
+ * - Signature login binds signed message to one-time nonce stored in DB.
+ */
 import { ethers } from "ethers";
 import crypto from "node:crypto";
 import { AppError } from "../errors.js";
@@ -18,6 +32,7 @@ import {
 } from "../repositories/user-repository.js";
 
 function hashPassword(password) {
+  // Random salt prevents rainbow-table reuse across users with same password.
   const salt = crypto.randomBytes(16).toString("hex");
   const digest = crypto.scryptSync(password, salt, 64).toString("hex");
   return `scrypt:${salt}:${digest}`;
@@ -25,6 +40,7 @@ function hashPassword(password) {
 
 function verifyPassword(input, storedHash) {
   if (storedHash.startsWith("plain:")) {
+    // Compatibility for bootstrap seed values; should be migrated to hashed format.
     return input === storedHash.slice(6);
   }
   const [algo, salt, digest] = storedHash.split(":");
@@ -36,6 +52,7 @@ function verifyPassword(input, storedHash) {
 }
 
 async function registerUser(payload) {
+  // Uniqueness checks are done before insert to return user-friendly conflict errors.
   const existing = await findUserByEmail(payload.email);
   if (existing) {
     throw new AppError("Email is already registered", 409);
@@ -122,6 +139,7 @@ async function loginWithWallet(walletAddress, signature) {
   }
   const message = `ScholarshipDisbursement login nonce: ${nonceRow.nonce}`;
   const recovered = ethers.verifyMessage(message, signature);
+  // Case-insensitive compare handles checksum casing differences for same address.
   if (recovered.toLowerCase() !== walletAddress.toLowerCase()) {
     throw new AppError("Invalid wallet signature", 401);
   }

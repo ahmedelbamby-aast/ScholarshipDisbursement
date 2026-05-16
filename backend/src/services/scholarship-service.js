@@ -1,3 +1,14 @@
+/**
+ * Scholarship application service.
+ *
+ * Responsibilities:
+ * - Orchestrates admin write flows spanning chain + DB audit persistence.
+ * - Exposes read/edit operations for audit history and telemetry views.
+ *
+ * Consistency model:
+ * - For approve/release, chain transaction confirmation occurs before DB audit insert.
+ *   This avoids persisting speculative audit rows for unconfirmed transactions.
+ */
 import {
   approveScholarship as approveOnChain,
   getChainTelemetry as getChainTelemetryOnChain,
@@ -53,6 +64,7 @@ async function editAuditEntry(type, id, payload) {
   try {
     return await updateAuditEntry(type, id, payload);
   } catch (error) {
+    // Repository emits generic message; service maps to API-level 404 contract.
     if (error.message === "Audit entry not found") {
       throw new AppError("Audit entry not found", 404);
     }

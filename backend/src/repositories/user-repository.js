@@ -1,3 +1,15 @@
+/**
+ * User/session/nonce PostgreSQL repository.
+ *
+ * Responsibilities:
+ * - Persists and queries user identities/roles/verification state.
+ * - Manages session token rows and expiration checks.
+ * - Stores one-time wallet nonces for MetaMask challenge flow.
+ *
+ * DB considerations:
+ * - Uses parameterized SQL to prevent injection.
+ * - Relies on DB constraints (unique email/token/wallet) for consistency guarantees.
+ */
 import crypto from "node:crypto";
 import { getPostgresPool } from "../postgres.js";
 import { DependencyUnavailableError } from "../errors.js";
@@ -112,6 +124,7 @@ async function verifyUser(id) {
 
 async function createSession(userId) {
   const pool = getPoolOrThrow();
+  // Cryptographically strong random session token mitigates guessing attacks.
   const token = crypto.randomBytes(24).toString("hex");
   const sql = `
     insert into app_sessions (user_id, session_token, expires_at)

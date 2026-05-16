@@ -42,8 +42,10 @@
             <form id="approveForm" class="row g-3 mt-1">
               <div class="col-12">
                 <label class="form-label">Student Wallet Address</label>
-                <input id="studentAddress" class="form-control" required placeholder="0x..." />
-                <small class="form-hint">Use the student recipient wallet address on the active network.</small>
+                <select id="studentAddress" class="form-select" required>
+                  <option value="">No students registered</option>
+                </select>
+                <small class="form-hint">Select a verified student (Name - Wallet Address) on the active network.</small>
               </div>
               <div class="col-12">
                 <label class="form-label">Amount (Wei)</label>

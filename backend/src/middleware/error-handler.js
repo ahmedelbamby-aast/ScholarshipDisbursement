@@ -1,3 +1,15 @@
+/**
+ * Terminal API error middleware.
+ *
+ * Responsibilities:
+ * - Converts thrown values into normalized `AppError` instances.
+ * - Emits server-fault logs with request correlation id.
+ * - Returns consistent JSON error payloads.
+ *
+ * Security note:
+ * - Current implementation returns raw appError message to clients; ensure
+ *   upstream code avoids leaking sensitive internals in thrown messages.
+ */
 import { AppError } from "../errors.js";
 
 function toErrorMessage(error, fallback) {

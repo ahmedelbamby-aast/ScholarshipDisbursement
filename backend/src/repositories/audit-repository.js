@@ -1,3 +1,17 @@
+/**
+ * Audit PostgreSQL repository.
+ *
+ * Responsibilities:
+ * - Persists scholarship approval/release audit rows.
+ * - Serves paginated audit history for dashboard views.
+ * - Serves merged audit rows for export services.
+ * - Handles admin audit status/note edits.
+ *
+ * DB/query considerations:
+ * - Values are parameterized to prevent SQL injection.
+ * - Dynamic table names are chosen from internal constants only.
+ * - History queries run rows+count in parallel for lower latency.
+ */
 import { getPostgresPool } from "../postgres.js";
 import { DependencyUnavailableError } from "../errors.js";
 
@@ -139,6 +153,7 @@ async function getAuditRowsForExport(limit = 5000) {
 
 async function updateAuditEntry(type, id, payload) {
   const pool = getPoolOrThrow();
+  // `type` is validated upstream and mapped to fixed table names only.
   const table = type === "approval" ? "scholarship_approvals" : "scholarship_releases";
   const sql = `
     update ${table}

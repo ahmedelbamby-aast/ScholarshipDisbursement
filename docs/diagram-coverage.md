@@ -27,10 +27,13 @@ This file maps requested diagram categories to current repository documentation 
 ## Sequence Diagram
 ```mermaid
 sequenceDiagram
-  participant Reader
-  participant Coverage
-  Reader->>Coverage: Inspect diagram status
-  Coverage-->>Reader: Implemented vs UNVERIFIED mapping
+  participant Engineer
+  participant CoverageDoc as diagram-coverage.md
+  participant DetailDocs as docs/*.md
+  Engineer->>CoverageDoc: Check diagram type status matrix
+  CoverageDoc-->>Engineer: Implemented vs UNVERIFIED markers
+  Engineer->>DetailDocs: Open mapped documentation file
+  DetailDocs-->>Engineer: Verified Mermaid + code references
 ```
 
 ## How this feature implemented ?
@@ -54,13 +57,24 @@ Behavior unclear from current codebase without the underlying source file contex
 
 ```mermaid
 sequenceDiagram
-  participant Caller
-  participant Module
-  participant Dependency
-  Caller->>Module: invoke entry point
-  Module->>Dependency: call/query
-  Dependency-->>Module: result/error
-  Module-->>Caller: response/state change
+  participant Client as Frontend Client
+  participant Route as Express Route
+  participant Validator as Request Validator
+  participant Service as Business Service
+  participant Repo as Repository
+  participant Chain as Contract Adapter
+  Route->>Validator: parse payload/query
+  Validator-->>Route: normalized input
+  Route->>Service: invoke use-case
+  alt off-chain state change
+    Service->>Repo: SQL operation
+    Repo-->>Service: persisted record
+  else on-chain operation
+    Service->>Chain: send tx/read call
+    Chain-->>Service: receipt/result
+  end
+  Service-->>Route: response model
+  Route-->>Client: API response
 ```
 #### Diagram Explanation
 Generic execution template constrained to implemented module interactions; exact functions are in the module source referenced by this doc.

@@ -1,3 +1,15 @@
+/**
+ * Authentication and user-management HTTP routes.
+ *
+ * Responsibilities:
+ * - Handles registration/login flows (password and MetaMask signature).
+ * - Exposes admin/auditor user listing and admin verification operations.
+ * - Exposes runtime helper endpoints used by frontend bootstrapping.
+ *
+ * Security boundaries:
+ * - Write/verify user endpoints are session + RBAC protected.
+ * - Wallet nonce flow prevents replay by requiring signed challenge responses.
+ */
 import { Router } from "express";
 import { ethers } from "ethers";
 import { AppError } from "../errors.js";
@@ -20,6 +32,7 @@ const authRouter = Router();
 
 authRouter.post("/api/auth/register", async (req, res, next) => {
   try {
+    // Strict payload parsing rejects malformed fields before DB side-effects.
     const payload = parseRegisterPayload(req.body);
     const created = await registerUser(payload);
     return res.status(201).json({ ok: true, user: created });
@@ -132,8 +145,18 @@ authRouter.get("/api/runtime/admin-wallet", async (_req, res, next) => {
   }
 });
 
+authRouter.get("/api/runtime/wallet/generate", async (_req, res, next) => {
+  try {
+    const wallet = ethers.Wallet.createRandom();
+    return res.status(200).json({ ok: true, address: wallet.address });
+  } catch (error) {
+    return next(normalizeError(error, "Wallet generation failed"));
+  }
+});
+
 function normalizeError(error, fallbackMessage) {
   if (error?.statusCode) {
+    // Preserve explicit status codes from domain/validation errors.
     return error;
   }
   return new AppError(error?.message || fallbackMessage, 500);

@@ -1,3 +1,10 @@
+/**
+ * Scholarship write-route validators.
+ *
+ * Responsibilities:
+ * - Validates approve/release payloads for shape and numeric constraints.
+ * - Preserves wei precision using BigInt parsing.
+ */
 import { ethers } from "ethers";
 import { ValidationError } from "../errors.js";
 

@@ -1,3 +1,16 @@
+/**
+ * Student dashboard runtime controller.
+ *
+ * Responsibilities:
+ * - Enforces student session access.
+ * - Connects MetaMask signer and verifies chain/network expectations.
+ * - Performs nonce-signature login and persists refreshed session.
+ * - Loads claimable installments from contract and submits claim transactions.
+ *
+ * Security considerations:
+ * - Connected wallet must match registered student wallet in session payload.
+ * - Claim transactions are sent directly from browser signer to contract.
+ */
 const runtime = {
   apiBase: window.FrontendUtils.getApiBase(),
   contractAddress: window.CONTRACT_ADDRESS || "",
@@ -109,6 +122,12 @@ async function connectWallet() {
     runtime.signer = await provider.getSigner();
 
     const address = await runtime.signer.getAddress();
+    const session = window.FrontendUtils.getSession();
+    const registeredWallet = String(session.user?.walletAddress || "").trim();
+    // Enforce identity binding: logged-in student account must use its registered wallet.
+    if (registeredWallet && registeredWallet.toLowerCase() !== address.toLowerCase()) {
+      throw new Error(`Connected wallet does not match your registered student wallet (${registeredWallet})`);
+    }
     walletInfo.textContent = `Connected: ${address}`;
 
     const networkResponse = await fetch(`${runtime.apiBase}/api/runtime/network`);
@@ -154,6 +173,12 @@ async function trySilentReconnect() {
     }
     runtime.signer = await provider.getSigner();
     const address = await runtime.signer.getAddress();
+    const session = window.FrontendUtils.getSession();
+    const registeredWallet = String(session.user?.walletAddress || "").trim();
+    if (registeredWallet && registeredWallet.toLowerCase() !== address.toLowerCase()) {
+      walletInfo.textContent = `Registered wallet: ${registeredWallet}`;
+      return;
+    }
     walletInfo.textContent = `Connected: ${address}`;
     runtime.contract = new ethers.Contract(runtime.contractAddress, ABI, runtime.signer);
     await loadClaimableInstallments(address);
@@ -174,6 +199,7 @@ async function loginWithMetaMask(address) {
     throw new Error(nonceData.error || "MetaMask nonce request failed");
   }
 
+  // Signature proves control of private key for the provided wallet address.
   const signature = await runtime.signer.signMessage(nonceData.message);
   const loginResponse = await fetch(`${runtime.apiBase}/api/auth/metamask/login`, {
     method: "POST",
@@ -220,7 +246,7 @@ claimInstallmentNumber.addEventListener("change", saveStudentUiState);
 window.addEventListener("beforeunload", saveStudentUiState);
 studentLogoutBtn?.addEventListener("click", () => {
   window.FrontendUtils.clearSession();
-  window.location.href = "student-login.html";
+  window.location.href = "index.html";
 });
 if (enforceStudentSession()) {
   restoreStudentUiState();

@@ -51,10 +51,24 @@ flowchart TD
 ## Sequence Diagram
 ```mermaid
 sequenceDiagram
-  participant Reader
-  participant Document
-  Reader->>Document: Open and read
-  Document-->>Reader: Render documented content
+  participant FE as Frontend
+  participant API as Express API
+  participant MW as Session+RBAC Middleware
+  participant SVC as Service Layer
+  participant DB as PostgreSQL
+  participant CH as Smart Contract
+  FE->>API: HTTP request
+  API->>MW: requireSession/requireRole (protected routes)
+  MW->>SVC: validated authorized request
+  alt DB-backed flow
+    SVC->>DB: query/insert/update
+    DB-->>SVC: rows/result
+  else Chain-backed flow
+    SVC->>CH: call/send transaction
+    CH-->>SVC: read result / tx receipt
+  end
+  SVC-->>API: response payload
+  API-->>FE: JSON/file response
 ```
 
 ## How this feature implemented ?
@@ -78,13 +92,24 @@ Behavior unclear from current codebase without the underlying source file contex
 
 ```mermaid
 sequenceDiagram
-  participant Caller
-  participant Module
-  participant Dependency
-  Caller->>Module: invoke entry point
-  Module->>Dependency: call/query
-  Dependency-->>Module: result/error
-  Module-->>Caller: response/state change
+  participant Client as Frontend Client
+  participant Route as Express Route
+  participant Validator as Request Validator
+  participant Service as Business Service
+  participant Repo as Repository
+  participant Chain as Contract Adapter
+  Route->>Validator: parse payload/query
+  Validator-->>Route: normalized input
+  Route->>Service: invoke use-case
+  alt off-chain state change
+    Service->>Repo: SQL operation
+    Repo-->>Service: persisted record
+  else on-chain operation
+    Service->>Chain: send tx/read call
+    Chain-->>Service: receipt/result
+  end
+  Service-->>Route: response model
+  Route-->>Client: API response
 ```
 #### Diagram Explanation
 Generic execution template constrained to implemented module interactions; exact functions are in the module source referenced by this doc.

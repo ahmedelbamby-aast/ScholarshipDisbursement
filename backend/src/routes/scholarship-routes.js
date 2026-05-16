@@ -1,3 +1,15 @@
+/**
+ * Scholarship/audit/telemetry/export HTTP routes.
+ *
+ * Responsibilities:
+ * - Handles admin write actions (approve/release/audit edit/export).
+ * - Handles read actions for admin/auditor/student (history/telemetry/funds).
+ * - Normalizes thrown errors into deterministic API error payloads.
+ *
+ * Integration:
+ * - Validators enforce request-shape correctness before service invocation.
+ * - Service layer encapsulates chain + DB orchestration.
+ */
 import { Router } from "express";
 import { AppError } from "../errors.js";
 import { parseApprovalPayload, parseReleasePayload } from "../validators/scholarships.js";
@@ -22,6 +34,7 @@ scholarshipRouter.use(requireSession);
 
 scholarshipRouter.post("/api/scholarships/approve", requireRole([ROLES.ADMIN]), async (req, res, next) => {
   try {
+    // Input validation happens before side-effects to fail fast on malformed payloads.
     const payload = parseApprovalPayload(req.body);
     const result = await approveScholarship(payload, config.txTimeoutMs);
     return res.status(201).json({ ok: true, txHash: result.txHash });
@@ -132,6 +145,7 @@ scholarshipRouter.get("/api/exports/transactions.pdf", requireRole([ROLES.ADMIN]
 
 function normalizeRouteError(error, fallbackMessage) {
   if (error?.statusCode) {
+    // Preserve domain-specific status mapping from lower layers.
     return error;
   }
   // Unknown failures are treated as 500 with safe fallback message.

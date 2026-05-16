@@ -1,3 +1,20 @@
+/**
+ * Express application composition root.
+ *
+ * Responsibilities:
+ * - Registers security and parsing middleware in deterministic order.
+ * - Registers request context/logging before any route handlers.
+ * - Mounts route modules and terminal error middleware.
+ *
+ * Architectural role:
+ * - This module builds the app object without binding a network port; `server.js`
+ *   is responsible for startup lifecycle and process-level failure handling.
+ *
+ * Security/performance considerations:
+ * - `helmet` is applied early to set security headers for all responses.
+ * - JSON parsing limit prevents oversized body abuse.
+ * - Error middleware is last to ensure all thrown/forwarded errors are normalized.
+ */
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";

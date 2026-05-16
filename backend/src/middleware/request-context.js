@@ -1,3 +1,10 @@
+/**
+ * Request context initializer middleware.
+ *
+ * Responsibilities:
+ * - Ensures each request has a correlation id (`requestId`) for observability.
+ * - Propagates request id back to caller response headers for trace stitching.
+ */
 import crypto from "node:crypto";
 
 function requestContext(req, res, next) {

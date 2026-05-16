@@ -1,3 +1,16 @@
+/**
+ * Blockchain service adapter for scholarship workflows.
+ *
+ * Responsibilities:
+ * - Executes admin-write transactions (approve/release) with confirmation timeout.
+ * - Reads event-based telemetry and funds movement data.
+ * - Provides backward-compatible fallbacks for older contract deployments that may
+ *   not expose newer optional view methods.
+ *
+ * Performance considerations:
+ * - Telemetry/funds endpoints batch event queries with `Promise.all`.
+ * - Day/block aggregation is done in-memory; lookback windows are bounded upstream.
+ */
 import { getContract } from "../contract.js";
 import { CONTRACT_NOT_READY_MESSAGE } from "../constants.js";
 import { DependencyUnavailableError } from "../errors.js";
@@ -42,7 +55,7 @@ async function releaseInstallment(payload, txTimeoutMs) {
 
 async function getApprovedStudents() {
   const contract = getContractOrThrow();
-  return contract.getApprovedStudents();
+  return readApprovedStudentsSafe(contract);
 }
 
 function toDayKey(unixSeconds) {
@@ -58,6 +71,7 @@ async function getFundsMovement(days) {
 
   const latestBlock = await provider.getBlock("latest");
   const latestNumber = Number(latestBlock?.number || 0);
+  // Approximate block/day ratio for local testnets; minimum avoids empty windows.
   const lookbackBlocks = Math.max(500, days * 7200);
   const fromBlock = Math.max(0, latestNumber - lookbackBlocks);
 
@@ -70,6 +84,7 @@ async function getFundsMovement(days) {
   const movementByDay = new Map();
 
   async function addEventAmount(eventList, bucketField, amountIndex) {
+    // Block timestamps are resolved per event to build day buckets for charting.
     for (const item of eventList) {
       const block = await provider.getBlock(item.blockNumber);
       const day = toDayKey(Number(block.timestamp));
@@ -111,10 +126,11 @@ async function getChainTelemetry(lookbackBlocks) {
     contract.queryFilter(contract.filters.ScholarshipFunded(), fromBlock, latestNumber),
     contract.queryFilter(contract.filters.InstallmentReleased(), fromBlock, latestNumber),
     contract.queryFilter(contract.filters.InstallmentClaimed(), fromBlock, latestNumber),
-    contract.fundedBalance(),
-    contract.getApprovedStudents(),
+    readFundedBalanceSafe(contract),
+    readApprovedStudentsSafe(contract),
   ]);
 
+  // Normalize event families into one sorted stream to compute totals and per-block view.
   const allEvents = [
     ...fundedEvents.map((ev) => ({ type: "funded", ev, amount: BigInt(ev.args?.[1] || 0n) })),
     ...releasedEvents.map((ev) => ({ type: "released", ev, amount: BigInt(ev.args?.[2] || 0n) })),
@@ -158,6 +174,42 @@ async function getChainTelemetry(lookbackBlocks) {
     byBlock: Array.from(byBlock.values()).sort((a, b) => a.blockNumber - b.blockNumber),
     recentEvents,
   };
+}
+
+async function readFundedBalanceSafe(contract) {
+  try {
+    const value = await contract.fundedBalance();
+    return BigInt(value || 0n);
+  } catch (error) {
+    // Backward compatibility: older deployments may not implement fundedBalance().
+    const message = String(error?.message || "");
+    const isMissingMethod =
+      message.includes("BAD_DATA") ||
+      message.includes("could not decode result data") ||
+      message.includes("is not a function");
+    if (isMissingMethod) {
+      return 0n;
+    }
+    throw error;
+  }
+}
+
+async function readApprovedStudentsSafe(contract) {
+  try {
+    const values = await contract.getApprovedStudents();
+    return Array.isArray(values) ? values : [];
+  } catch (error) {
+    // Backward compatibility: older deployments may not implement getApprovedStudents().
+    const message = String(error?.message || "");
+    const isMissingMethod =
+      message.includes("BAD_DATA") ||
+      message.includes("could not decode result data") ||
+      message.includes("is not a function");
+    if (isMissingMethod) {
+      return [];
+    }
+    throw error;
+  }
 }
 
 export { approveScholarship, releaseInstallment, getApprovedStudents, getFundsMovement, getChainTelemetry };

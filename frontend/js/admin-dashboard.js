@@ -1,3 +1,17 @@
+/**
+ * Admin/Auditor dashboard controller.
+ *
+ * Responsibilities:
+ * - Executes admin write operations (approve/release, audit edit, verify users, exports).
+ * - Executes shared read operations (audit history, telemetry, funds graph).
+ * - Enforces role-based UI restrictions (auditor view-only).
+ * - Persists dashboard UI state to survive refresh/navigation.
+ *
+ * Integration:
+ * - Backend APIs under `/api/*` for all data and state mutations.
+ * - Chart.js for telemetry and funds visualization.
+ * - FrontendUtils for session/auth headers/loading/alerts.
+ */
 const runtime = { apiBase: window.FrontendUtils.getApiBase() };
 
 const alertBox = document.getElementById("alertBox");
@@ -39,6 +53,7 @@ const ADMIN_UI_STATE_KEY = "scholarship_admin_ui_state";
 function enforceAdminAreaSession() {
   const session = window.FrontendUtils.getSession();
   const role = session.user?.role || "";
+  // Only admin and auditor can access this page.
   if (!session.token || (role !== "admin" && role !== "auditor")) {
     window.location.href = "admin-login.html";
     return false;
@@ -75,6 +90,7 @@ function saveUiState() {
     telemetryBlocks: telemetryBlocks?.value || "500",
     exportBlocks: exportBlocks?.value || "1000",
   };
+  // Persisting allows refresh resilience for operators during long review sessions.
   localStorage.setItem(ADMIN_UI_STATE_KEY, JSON.stringify(state));
 }
 
@@ -123,6 +139,7 @@ function toEth(weiValue) { return Number(BigInt(weiValue || "0")) / 1e18; }
 
 function setRoleUiState() {
   const isAdmin = getRole() === "admin";
+  // Auditor is intentionally read-only; disable write actions in UI.
   approveButton.disabled = !isAdmin;
   releaseButton.disabled = !isAdmin;
   approveForm.querySelectorAll("input, select").forEach((el) => { el.disabled = !isAdmin; });
@@ -150,6 +167,7 @@ async function exportFile(kind, button) {
     }
 
     const blob = await response.blob();
+    // Browser-driven download is triggered by temporary anchor click.
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
@@ -265,13 +283,19 @@ async function loadApprovedStudents() {
     if (!users.length) {
       studentRows.innerHTML = '<tr><td colspan="7" class="text-secondary">No users registered.</td></tr>';
     }
+    // Only verified students with wallets can be used for approve/release target selection.
     const students = users.filter((item) => item.role === "student" && item.is_verified && item.wallet_address);
     if (!students.length) {
+      document.getElementById("studentAddress").innerHTML = '<option value="">No students registered</option>';
       releaseStudentAddress.innerHTML = '<option value="">No students registered</option>';
       auditStudentAddress.innerHTML = '<option value="">No students registered</option>';
     } else {
+      document.getElementById("studentAddress").innerHTML = ['<option value="">Select verified student</option>', ...students.map((s) => `<option value="${s.wallet_address}">${s.full_name} - ${s.wallet_address}</option>`)].join("");
       releaseStudentAddress.innerHTML = ['<option value="">Select verified student</option>', ...students.map((s) => `<option value="${s.wallet_address}">${s.full_name} (${s.wallet_address})</option>`)].join("");
       auditStudentAddress.innerHTML = ['<option value="">All students</option>', ...students.map((s) => `<option value="${s.wallet_address}">${s.full_name}</option>`)].join("");
+      if (persisted.approve?.studentAddress) {
+        document.getElementById("studentAddress").value = persisted.approve.studentAddress;
+      }
       if (persisted.release?.studentAddress) {
         releaseStudentAddress.value = persisted.release.studentAddress;
       }
@@ -436,5 +460,5 @@ telemetryTimer = setInterval(loadTelemetry, 8000);
 window.addEventListener("beforeunload", saveUiState);
 logoutBtn?.addEventListener("click", () => {
   window.FrontendUtils.clearSession();
-  window.location.href = "admin-login.html";
+  window.location.href = "index.html";
 });

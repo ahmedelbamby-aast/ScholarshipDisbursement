@@ -1,7 +1,20 @@
+/**
+ * Session authentication middleware.
+ *
+ * Responsibilities:
+ * - Extracts bearer token from `Authorization` header.
+ * - Resolves session/user identity for protected API paths.
+ * - Supports legacy role-header compatibility path used by older clients/tests.
+ *
+ * Security considerations:
+ * - Legacy `x-user-role` path trusts caller-provided role and should be deprecated.
+ * - Bearer-session path enforces server-side session expiry/validity.
+ */
 import { AuthorizationError } from "../errors.js";
 import { getSessionByToken } from "../services/auth-service.js";
 
 function readBearerToken(headerValue) {
+  // Defensive parsing avoids type errors when header is missing/non-string.
   if (typeof headerValue !== "string") {
     return "";
   }
@@ -16,6 +29,7 @@ async function requireSession(req, _res, next) {
   try {
     const legacyRole = String(req.header("x-user-role") || "").trim().toLowerCase();
     if (legacyRole) {
+      // Compatibility shortcut: creates synthetic identity for legacy callers.
       req.context = req.context || {};
       req.context.authUser = {
         id: 0,

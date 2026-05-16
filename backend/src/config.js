@@ -1,3 +1,14 @@
+/**
+ * Central backend runtime configuration.
+ *
+ * Responsibilities:
+ * - Loads `.env` values and resolves network profile specific settings.
+ * - Produces a normalized config object consumed by routes/services/adapters.
+ *
+ * Security considerations:
+ * - Contains sensitive fields (`adminPrivateKey`, `databaseUrl`); callers must not log raw values.
+ * - Default local hardhat private key is only for development/test bootstrap.
+ */
 import dotenv from "dotenv";
 import { resolveNetworkConfig } from "../../config/network-profile.js";
 

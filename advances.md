@@ -108,7 +108,7 @@ Add:
 
 2. Evidence-quality package
 - Time-stamped screenshots for each key flow
-- 3–5 minute narrated demo video
+- 3ï¿½5 minute narrated demo video
 - Failure-mode demos (unauthorized access, expired claim, insufficient funds)
 
 3. Story-driven documentation
@@ -186,15 +186,29 @@ flowchart TD
 5. Threat model + security automation in CI
 6. Final demo evidence pack + polished narrative documentation
 
-If all above is implemented with stable tests and clear documentation, the project moves from “complete” to **A+ caliber** against the grading sheet.
+If all above is implemented with stable tests and clear documentation, the project moves from ï¿½completeï¿½ to **A+ caliber** against the grading sheet.
 
 ## Sequence Diagram
 ```mermaid
 sequenceDiagram
-  participant Reader
-  participant Document
-  Reader->>Document: Open and read
-  Document-->>Reader: Render documented content
+  participant FE as Frontend
+  participant API as Express API
+  participant MW as Session+RBAC Middleware
+  participant SVC as Service Layer
+  participant DB as PostgreSQL
+  participant CH as Smart Contract
+  FE->>API: HTTP request
+  API->>MW: requireSession/requireRole (protected routes)
+  MW->>SVC: validated authorized request
+  alt DB-backed flow
+    SVC->>DB: query/insert/update
+    DB-->>SVC: rows/result
+  else Chain-backed flow
+    SVC->>CH: call/send transaction
+    CH-->>SVC: read result / tx receipt
+  end
+  SVC-->>API: response payload
+  API-->>FE: JSON/file response
 ```
 
 ## How this feature implemented ?

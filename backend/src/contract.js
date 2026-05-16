@@ -1,3 +1,19 @@
+/**
+ * Ethereum contract adapter factory/cache.
+ *
+ * Responsibilities:
+ * - Resolves deployed contract address from metadata/env/runtime file.
+ * - Creates ethers provider + signer + contract client.
+ * - Caches contract instance keyed by runtime identity (RPC/chain/address/key).
+ *
+ * Integration boundaries:
+ * - Upstream: service layer (`contract-service.js`) calls `getContract()`.
+ * - Downstream: EVM JSON-RPC endpoint through `ethers.JsonRpcProvider`.
+ *
+ * Failure handling:
+ * - Returns `null` instead of throwing when contract cannot be safely constructed.
+ *   Service layer converts this to dependency-unavailable API errors.
+ */
 import { ethers } from "ethers";
 import fs from "node:fs";
 import config from "./config.js";
@@ -30,6 +46,7 @@ function getContract() {
   }
 
   const provider = new ethers.JsonRpcProvider(config.rpcUrl, config.chainId);
+  // Wallet is bound to provider to sign admin transactions with deterministic chain context.
   const wallet = new ethers.Wallet(config.adminPrivateKey, provider);
   const contract = new ethers.Contract(contractAddress, CONTRACT_ABI, wallet);
 

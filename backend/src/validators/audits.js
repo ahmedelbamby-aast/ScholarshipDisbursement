@@ -1,3 +1,10 @@
+/**
+ * Audit edit validators.
+ *
+ * Responsibilities:
+ * - Validates route params (`type`, `id`) for audit update endpoint.
+ * - Validates allowed status transitions and note length constraints.
+ */
 import { ValidationError } from "../errors.js";
 
 const allowedTypes = new Set(["approval", "release"]);

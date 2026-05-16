@@ -1,3 +1,15 @@
+/**
+ * Shared application error taxonomy.
+ *
+ * Responsibilities:
+ * - Provides stable typed errors with HTTP status mapping.
+ * - Enables route/middleware layers to return deterministic error payloads.
+ *
+ * Usage:
+ * - Throw `ValidationError` for input contract violations.
+ * - Throw `AuthorizationError` for permission/authentication denials.
+ * - Throw `DependencyUnavailableError` for unavailable external systems (DB/RPC).
+ */
 class AppError extends Error {
   constructor(message, statusCode = 500) {
     super(message);

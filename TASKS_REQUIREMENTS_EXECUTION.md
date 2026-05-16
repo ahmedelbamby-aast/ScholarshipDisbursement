@@ -145,10 +145,24 @@ Current work focuses on **delivery/submission completeness**, **demo artifacts**
 ## Sequence Diagram
 ```mermaid
 sequenceDiagram
-  participant Reader
-  participant Document
-  Reader->>Document: Open and read
-  Document-->>Reader: Render documented content
+  participant FE as Frontend
+  participant API as Express API
+  participant MW as Session+RBAC Middleware
+  participant SVC as Service Layer
+  participant DB as PostgreSQL
+  participant CH as Smart Contract
+  FE->>API: HTTP request
+  API->>MW: requireSession/requireRole (protected routes)
+  MW->>SVC: validated authorized request
+  alt DB-backed flow
+    SVC->>DB: query/insert/update
+    DB-->>SVC: rows/result
+  else Chain-backed flow
+    SVC->>CH: call/send transaction
+    CH-->>SVC: read result / tx receipt
+  end
+  SVC-->>API: response payload
+  API-->>FE: JSON/file response
 ```
 
 ## How this feature implemented ?

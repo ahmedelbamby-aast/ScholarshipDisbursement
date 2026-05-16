@@ -30,7 +30,7 @@ From `Submission_Grading` sheet:
 | Problem statement | Present in docs | Could be standardized into one dedicated submission section |
 | Why blockchain is appropriate | Partially present | Needs a focused rationale section tied to trust/audit/funds control |
 | System architecture diagram | Present (Mermaid) | Need one final canonical architecture diagram for submission packet |
-| Smart contract design | Present | Needs concise “design decisions + security controls” section |
+| Smart contract design | Present | Needs concise ï¿½design decisions + security controlsï¿½ section |
 | Frontend/backend stack | Present | Needs brief justification paragraph for chosen stack |
 | Demo screenshots or video | Not found in repo deliverables | **Missing artifact** |
 | Limitations and future improvements | Partially present | Needs a dedicated final section in submission document |
@@ -44,7 +44,7 @@ From `Submission_Grading` sheet:
 | Contract unit/integration/system runs | Defined | Environment lock/network issues can block reproducible local execution |
 | End-to-end scripted demo runbook | Partial | Add one command-sequence runbook with expected outputs |
 
-## 5) Documentation Gaps for “Full Dedicated Documentation with Mermaid”
+## 5) Documentation Gaps for ï¿½Full Dedicated Documentation with Mermaidï¿½
 
 | Documentation Need | Status | Gap |
 |---|---|---|
@@ -77,10 +77,24 @@ flowchart TD
 ## Sequence Diagram
 ```mermaid
 sequenceDiagram
-  participant Reader
-  participant Document
-  Reader->>Document: Open and read
-  Document-->>Reader: Render documented content
+  participant FE as Frontend
+  participant API as Express API
+  participant MW as Session+RBAC Middleware
+  participant SVC as Service Layer
+  participant DB as PostgreSQL
+  participant CH as Smart Contract
+  FE->>API: HTTP request
+  API->>MW: requireSession/requireRole (protected routes)
+  MW->>SVC: validated authorized request
+  alt DB-backed flow
+    SVC->>DB: query/insert/update
+    DB-->>SVC: rows/result
+  else Chain-backed flow
+    SVC->>CH: call/send transaction
+    CH-->>SVC: read result / tx receipt
+  end
+  SVC-->>API: response payload
+  API-->>FE: JSON/file response
 ```
 
 ## How this feature implemented ?

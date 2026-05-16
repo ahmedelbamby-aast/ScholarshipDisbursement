@@ -1,3 +1,13 @@
+/**
+ * Lightweight request duration logger.
+ *
+ * Responsibilities:
+ * - Captures per-request elapsed milliseconds.
+ * - Emits method/path/request-id log line after request stream ends.
+ *
+ * Performance note:
+ * - Uses low-overhead timestamp diff and `console.info`; suitable for local/small deployments.
+ */
 function requestLogger(req, _res, next) {
   const startedAt = Date.now();
   req.on("end", () => {

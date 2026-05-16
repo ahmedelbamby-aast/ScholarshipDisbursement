@@ -27,6 +27,7 @@
     "deploy:local": "node tools/run-hardhat.js run scripts/deploy.js --network localhost",
     "deploy:sepolia": "node tools/run-hardhat.js run scripts/deploy.js --network sepolia",
     "deploy:docker": "node scripts/deployer.js",
+    "seed:users": "node scripts/seed-users.js",
     "start:backend": "node backend/src/server.js",
     "start:frontend": "node server.js"
   },

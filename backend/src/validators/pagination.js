@@ -1,3 +1,10 @@
+/**
+ * Query validators for paginated/windowed endpoints.
+ *
+ * Responsibilities:
+ * - Parses positive integer query fields with defaults.
+ * - Applies endpoint-specific hard caps to control DB/RPC cost.
+ */
 import { ValidationError } from "../errors.js";
 
 function parsePositiveIntOrDefault(raw, defaultValue) {

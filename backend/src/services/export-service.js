@@ -1,3 +1,14 @@
+/**
+ * Export service for admin downloadable artifacts.
+ *
+ * Responsibilities:
+ * - Builds a unified export row set from chain telemetry + DB audit logs.
+ * - Serializes export payloads to CSV, XLSX, and PDF.
+ *
+ * Performance constraints:
+ * - Audit export query currently caps at 5000 rows.
+ * - PDF export intentionally limits rendered rows (250) to control output size/memory.
+ */
 import PDFDocument from "pdfkit";
 import * as XLSX from "xlsx";
 import { getChainTelemetry } from "./contract-service.js";
@@ -53,6 +64,7 @@ async function exportCsv(blocks) {
   const csvLines = [headers.join(",")].concat(
     rows.map((row) =>
       headers
+        // RFC4180 escaping: double internal quotes and quote all fields.
         .map((key) => `"${String(row[key] ?? "").replace(/"/g, "\"\"")}"`)
         .join(",")
     )

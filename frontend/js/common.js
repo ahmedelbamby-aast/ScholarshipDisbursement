@@ -1,3 +1,15 @@
+/**
+ * Shared frontend utility module.
+ *
+ * Responsibilities:
+ * - Normalizes API base URL selection for local vs same-origin deployments.
+ * - Provides session storage helpers and auth header composition.
+ * - Provides shared UI helpers for alerts and loading button states.
+ *
+ * Security considerations:
+ * - Session token is stored in localStorage for SPA-style persistence.
+ *   This is vulnerable to XSS; keep DOM injection controls strict.
+ */
 window.FrontendUtils = (() => {
   const SESSION_KEY = "scholarship_session";
 

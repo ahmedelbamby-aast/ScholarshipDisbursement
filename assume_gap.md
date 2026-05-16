@@ -40,7 +40,7 @@ Even after current known gaps are closed, the system may still miss:
 
 ## 2) Quality Gate Still Needed
 
-A final “definition of done” gate should still require:
+A final ï¿½definition of doneï¿½ gate should still require:
 - Full automated test pass in a clean environment
 - End-to-end demo script run with reproducible outputs
 - Security checklist sign-off
@@ -75,10 +75,24 @@ This is what can still be missing **even after** the currently known requirement
 ## Sequence Diagram
 ```mermaid
 sequenceDiagram
-  participant Reader
-  participant Document
-  Reader->>Document: Open and read
-  Document-->>Reader: Render documented content
+  participant FE as Frontend
+  participant API as Express API
+  participant MW as Session+RBAC Middleware
+  participant SVC as Service Layer
+  participant DB as PostgreSQL
+  participant CH as Smart Contract
+  FE->>API: HTTP request
+  API->>MW: requireSession/requireRole (protected routes)
+  MW->>SVC: validated authorized request
+  alt DB-backed flow
+    SVC->>DB: query/insert/update
+    DB-->>SVC: rows/result
+  else Chain-backed flow
+    SVC->>CH: call/send transaction
+    CH-->>SVC: read result / tx receipt
+  end
+  SVC-->>API: response payload
+  API-->>FE: JSON/file response
 ```
 
 ## How this feature implemented ?

@@ -1,3 +1,13 @@
+/**
+ * Health/readiness route.
+ *
+ * Responsibilities:
+ * - Exposes lightweight liveness signal for orchestrators and operators.
+ * - Returns static backend service identity payload.
+ *
+ * Note:
+ * - This endpoint does not probe downstream dependencies (DB/RPC).
+ */
 import { Router } from "express";
 
 const healthRouter = Router();
